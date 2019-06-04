@@ -1,6 +1,6 @@
 # shazam-poc
 App to imitate shazam's algorithm
-#VM options for Intellij
+# VM options for Intellij
 ```
 -p
 "C:\Program Files\Java\javafx-sdk-11.0.2\lib"
