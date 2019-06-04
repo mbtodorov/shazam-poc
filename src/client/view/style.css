@@ -1,0 +1,62 @@
+/* Define accent and background color: */
+*{
+    primary-color: #01a7ff;
+    primary-color-dark: #0076b5;
+    primary-background-color: #2A2E37;
+}
+
+.root {
+    -fx-font-size: 12pt;
+    -fx-font-family: Tahoma, Geneva, sans-serif;
+    -fx-background: primary-background-color;
+}
+
+.root-pane {
+    -fx-padding: 25 0 20 0;
+    -fx-pref-width: 400;
+    -fx-spacing: 20;
+}
+
+.compute-btn {
+    -fx-background-color: primary-color;
+    -fx-text-fill: #fff;
+    -fx-background-radius: 5px;
+    -fx-pref-height: 20px;
+    -fx-padding: 12px;
+}
+
+.compute-btn:hover {
+    -fx-background-color: primary-color-dark;
+    -fx-cursor: hand;
+}
+
+.compute-btn:pressed {
+    -fx-opacity: 0.75;
+}
+
+.song-label {
+
+}
+
+.info-label {
+    -fx-text-fill: #ededed;
+}
+
+.go-btn {
+    -fx-background-color: primary-color;
+    -fx-text-fill: #fff;
+    -fx-font-weight: bold;
+    -fx-font-size: 16pt;
+    -fx-background-radius: 130px;
+    -fx-pref-height: 130px;
+    -fx-pref-width: 130px;
+}
+
+.go-btn:hover {
+    -fx-background-color: primary-color-dark;
+    -fx-cursor: hand;
+}
+
+.go-btn:pressed {
+    -fx-opacity: 0.75;
+}
