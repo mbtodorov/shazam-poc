@@ -34,12 +34,24 @@
     -fx-opacity: 0.75;
 }
 
-.song-label {
+.song-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #d5d5d5;
+    -fx-padding: 12;
+    -fx-pref-height: 15;
+}
 
+.song-btn:hover {
+    -fx-cursor: hand;
+    -fx-background-color: #5d5d5d;
+}
+
+.song-btn:pressed {
+    -fx-opacity: 0.75;
 }
 
 .info-label {
-    -fx-text-fill: #ededed;
+    -fx-text-fill: #d5d5d5;
 }
 
 .go-btn {
