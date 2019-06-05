@@ -1,6 +1,6 @@
 package client.view;
 
-import client.model.MicListener;
+import client.model.MicController;
 import server.hash.Mp3Hasher;
 
 import javafx.application.Application;
@@ -166,9 +166,8 @@ public class Main extends Application {
      */
     private void go(ActionEvent e) {
         toggleGoBtnDisable();
-        info.setText(LISTENING);
 
-        MicListener listener = new MicListener();
+        MicController listener = new MicController();
         try {
             logger.log(Level.INFO, "Calling mic-listening algorithm...");
             // listen to mic
