@@ -1,7 +1,7 @@
 package client.view;
 
 import client.model.MicController;
-import server.hash.Mp3Hasher;
+import server.hash.Mp3Decoder;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -128,15 +128,12 @@ public class Main extends Application {
      * @param e btn
      */
     private void computeSongs(ActionEvent e) {
-        logger.log(Level.INFO, "Hashing algorithm called...");
+        logger.log(Level.INFO, "Decoding algorithm called...");
 
-        // enable go button
-        toggleGoBtnDisable();
+        Mp3Decoder decoder = new Mp3Decoder();
+        String[] songs = decoder.populateDB();
 
-        // hash songs into db
-        String[] songs = Mp3Hasher.hashMp3s();
-
-        logger. log(Level.INFO, "Hashing algorithm executed successfully!");
+        logger. log(Level.INFO, "Decoding algorithm executed successfully!");
         // display in grid
         for(int i = 0; i < songs.length; i++) {
             Button songBtn = new Button(songs[i]);
@@ -146,11 +143,14 @@ public class Main extends Application {
             songGrid.add(songBtn, i%2, i/2);
         }
 
-        logger.log(Level.INFO, "Hashed Songs added to grid.");
+        logger.log(Level.INFO, "Decoded Songs added to grid.");
 
         // disable compute btn
         Button btn = (Button) e.getSource();
         btn.setDisable(true);
+
+        // enable go button
+        toggleGoBtnDisable();
 
         // resize
         mStage.sizeToScene();

@@ -1,7 +1,13 @@
 package server.hash;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  * This class contains the algorithms used to hash songs.
@@ -12,9 +18,9 @@ import java.util.logging.Logger;
  * @version 1.0
  * @author Martin Todorov
  */
-public class Mp3Hasher {
+public class Mp3Decoder {
     // logger
-    private final static Logger logger = Logger.getLogger(Mp3Hasher.class.getName());
+    private final static Logger logger = Logger.getLogger(Mp3Decoder.class.getName());
 
     /**
      * Method to iterate through all mp3 files in the music dir in
@@ -22,16 +28,16 @@ public class Mp3Hasher {
      *
      * @return a string array with all the hashed songs' names;
      */
-    public static String[] hashMp3s() {
+    public String[] populateDB() {
         String[] result = new String[]{"1", "2", "3", "4", "5", "6"};
 
+        File folder = new File("../../../music");
+        System.out.println(folder.toString());
+        logger.log(Level.INFO, "Looking through folder " + folder);
+
         logger.log(Level.INFO, "Iterating through songs...");
-
-        // TODO: implement hashing algorithm
-
         logger.log(Level.INFO, "All songs have been hashed!");
         return result;
     }
-
     // TODO: implement hashing algorithm for a single mp3
 }
