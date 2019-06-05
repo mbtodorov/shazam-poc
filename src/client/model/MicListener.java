@@ -1,62 +1,80 @@
 package client.model;
 
-import client.model.exc.MatchFoundException;
 import client.model.exc.NoMatchException;
 
-import javax.sound.sampled.*;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.TargetDataLine;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * This class is responsible for registering analog audio from
- * the microphone. It looks for matches in the database and throws
- * an exception which stops the algorithm and returns a match
- * (if the song playing has been identified) or an error (if no
- * match has been found).
- *
- * @version 1.0;
- * @author Martin Todorov
- */
-public class MicListener {
-    // logger
+public class MicListener extends Thread {
     private final static Logger logger = Logger.getLogger(MicListener.class.getName());
 
+    // static strings for exception descriptions
+    private static final String MATCH_FOUND, NO_MATCH_FOUND;
+    static {
+        MATCH_FOUND = "Success! A match has been found: ";
+        NO_MATCH_FOUND = "No match has been found. Try Again.";
+    }
+
+    private Exception ex;
     private AudioFormat format;
-    public MicListener() {
-        format = getAudioFormat();
+
+    MicListener(AudioFormat format) {
+        this.format = format;
     }
 
-    /**
-     * The main algorithm to try and match audio from mic to DB.
-     * Runs for 10 seconds.
-     *
-     * @throws NoMatchException no match has been found for 10 seconds
-     * @throws MatchFoundException a matching song has been found
-     */
-    public void listen() throws Exception{
-        logger.log(Level.INFO, "Trying to connect to mic...");
+    @Override
+    public void run() {
+        DataLine.Info targetInfo = new DataLine.Info(TargetDataLine.class, format);
+        try {
+            TargetDataLine targetLine = (TargetDataLine) AudioSystem.getLine(targetInfo);
+            targetLine.open(format);
+            logger.log(Level.INFO, "Connected successfully.");
+            targetLine.start();
+            logger.log(Level.INFO, "Started targetLine...");
 
-        MicThread t1 = new MicThread(format);
-        t1.start();
-        try{
-            t1.join();
-        }
-        catch(Exception e) {
+            int count;
+            byte[] targetData = new byte[targetLine.getBufferSize() / 5];
 
+            long t = System.currentTimeMillis();
+            long end = t + 1000;
+            logger.log(Level.INFO, "Listening...");
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            while (System.currentTimeMillis() < end) {
+                count = targetLine.read(targetData, 0, targetData.length);
+
+                if(count > 0) {
+                    out.write(targetData, 0, count);
+                }
+            }
+
+            byte[] b = out.toByteArray();
+            System.out.println("Mic input: ");
+            for (byte value : b) {
+                System.out.print((int) value + " ");
+            }
+            out.close();
+            targetLine.close();
         }
-        t1.checkForException();
+        catch (Exception e) {
+            logger.log(Level.SEVERE, "Line was not available... Terminating system.");
+            System.exit(-1);
+        }
+
+        if(ex == null) {
+            ex = new NoMatchException(NO_MATCH_FOUND);
+        }
     }
 
-    private AudioFormat getAudioFormat() {
-        float sampleRate = 44100;
-        int sampleSizeInBits = 8;
-        int channels = 1; // mono
-        boolean signed = true;
-        boolean bigEndian = true;
-        return new AudioFormat(sampleRate, sampleSizeInBits, channels,
-                               signed, bigEndian);
+    void checkForException() throws Exception {
+        if (ex!= null) {
+            throw ex;
+        }
     }
 }
