@@ -24,72 +24,64 @@ public class Mp3Fingerprint {
     private final static Logger logger = Logger.getLogger(Mp3Fingerprint.class.getName());
 
     /**
-     * Method to iterate through all mp3 files in the music dir in
-     * root folder. Stores results in DB.
+     * Scans for songs in {root dir}/music/*.mp3
      *
-     * @return a string array with all the hashed songs' names;
+     * @return a string array with all the songs' names;
      */
-    public String[] generateFingerprints() {
+    public String[] scanForSongs() {
         File dir = new File("music");
         File[] directoryListing = dir.listFiles();
-        ArrayList<File> songs = new ArrayList<>();
+        ArrayList<String> songs = new ArrayList<>();
 
         logger.log(Level.INFO, "Looking for songs in folder " + dir.getAbsolutePath());
 
         assert directoryListing != null;
         for(File file : directoryListing) {
             if(file.getName().endsWith(".mp3")) {
-                songs.add(file);
+                songs.add(file.getName());
             }
         }
 
-        logger.log(Level.INFO, "Iterating through songs found... (" + songs.size() + " total)");
+        return songs.toArray(new String[songs.size()]);
+    }
 
-        String[] result = new String[songs.size()];
-        int in = 0;
-        for(File song : songs) {
-            logger.log(Level.INFO, "Decoding song " + song.getName());
-
-            result[in] = song.getName();
-            in++;
-
-            byte[] audio = new byte[(int) song.length()];
-            try {
-                FileInputStream fis = new FileInputStream(song);
-                fis.read(audio);
-                fis.close();
-            }
-            catch(IOException e) {
-                logger.log(Level.SEVERE, "Error streaming song" + song.getName() + "to byte array.");
-            }
-
-            int winSize = 4096;
-            int amountPossible = audio.length/winSize;
-
-            //When turning into frequency domain we'll need complex numbers:
-            Complex[][] results = new Complex[amountPossible][];
-
-            //For all the chunks:
-            for(int times = 0;times < amountPossible; times++) {
-                Complex[] complex = new Complex[winSize];
-                for(int i = 0;i < winSize;i++) {
-                    //Put the time domain data into a complex number with imaginary part as 0:
-                    complex[i] = new Complex(audio[(times*winSize)+i], 0);
-                }
-                //Perform FFT analysis on the chunk:
-                results[times] = FFT.fft(complex);
-            }
-
-            for(Complex[] c : results) {
-                for(Complex cs : c) {
-                    System.out.println(cs.toString() + " ");
-                }
-            }
-            logger.log(Level.INFO, song.getName() + " decoded and added to DB");
+    /**
+     * Takes a file (mp3) and converts it two Complex[][]
+     *
+     * @param song the file to decode
+     * @return 2D spectrogram points representation
+     */
+    public Complex[][] decode(File song) {
+        // stream the file to a byte array
+        byte[] audio = new byte[(int) song.length()];
+        try {
+            FileInputStream fis = new FileInputStream(song);
+            fis.read(audio);
+            fis.close();
+        }
+        catch(IOException e) {
+            logger.log(Level.SEVERE, "Error streaming song" + song.getName() + "to byte array.");
         }
 
-        logger.log(Level.INFO, "All songs have been hashed!");
-        return result;
+        // Window size:
+        int winSize = 4096;
+        int amountPossible = audio.length/winSize;
+
+        // When turning into frequency domain we'll need complex numbers:
+        Complex[][] results = new Complex[amountPossible][];
+
+        // For all the chunks:
+        for(int times = 0;times < amountPossible; times++) {
+            Complex[] complex = new Complex[winSize];
+            for(int i = 0;i < winSize;i++) {
+                //Put the time domain data into a complex number with imaginary part as 0:
+                complex[i] = new Complex(audio[(times*winSize)+i], 0);
+            }
+            //Perform FFT analysis on the chunk:
+            results[times] = FFT.fft(complex);
+        }
+
+        return results;
     }
     // TODO: implement hashing algorithm for a single mp3
 }

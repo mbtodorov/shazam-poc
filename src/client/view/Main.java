@@ -13,6 +13,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.event.ActionEvent;
 
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -126,20 +127,23 @@ public class Main extends Application {
      * @param e btn
      */
     private void computeSongs(ActionEvent e) {
-        logger.log(Level.INFO, "Decoding algorithm called...");
-
         Mp3Fingerprint fingerprinter = new Mp3Fingerprint();
-        String[] songs = fingerprinter.generateFingerprints();
+        String[] songs = fingerprinter.scanForSongs();
 
-        logger. log(Level.INFO, "Decoding algorithm executed successfully!");
-        // display in grid
+
+        logger.log(Level.INFO, "Iterating through songs found... (" + songs.length + " total)");
+
         for(String song : songs) {
-            Button songBtn = new Button(song);
+            logger.log(Level.INFO, "Decoding song " + song);
+
+            SongBtn songBtn = new SongBtn(song, fingerprinter.decode(new File("music/" + song)));
             songBtn.setOnAction(this::showSpectrogram);
             songBtn.getStyleClass().add("song-btn");
             songBtn.setWrapText(true);
 
             songGrid.getChildren().add(songBtn);
+
+            logger.log(Level.INFO, "Done decoding " + song);
         }
 
         logger.log(Level.INFO, "Decoded Songs added to grid.");
@@ -204,12 +208,15 @@ public class Main extends Application {
      */
     private void showSpectrogram(ActionEvent e) {
         // get the song
-        Button btn = (Button) e.getSource();
+        SongBtn btn = (SongBtn) e.getSource();
         String song = btn.getText();
 
         logger.log(Level.INFO, "Begin painting the spectrogram for song " + song + "...");
 
-        //TODO: implement new window with spectrogram
+        Scene newScene = new Scene(new Spectrogram(btn.getPoints()));
+        Stage newStage = new Stage();
+        newStage.setScene(newScene);
+        newStage.show();
 
         logger.log(Level.INFO, "Successfully painted spectrogram!");
     }
