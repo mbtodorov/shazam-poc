@@ -3,8 +3,6 @@ package server.fft;
 
 import server.dsts.Complex;
 
-import javax.sound.sampled.AudioFormat;
-
 /*************************************************************************
  * Compilation: javac FFT.java Execution: java FFT N Dependencies: Complex.java
  *
@@ -168,16 +166,4 @@ public class FFT {
      *
      *********************************************************************/
 
-    public static class FormatStandard {
-
-        public static AudioFormat getAudioFormat() {
-            float sampleRate = 44100;
-            int sampleSizeInBits = 8;
-            int channels = 1; // mono
-            boolean signed = true;
-            boolean bigEndian = true;
-            return new AudioFormat(sampleRate, sampleSizeInBits, channels,
-                    signed, bigEndian);
-        }
-    }
 }

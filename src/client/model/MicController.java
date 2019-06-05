@@ -2,7 +2,7 @@ package client.model;
 
 import client.model.exc.MatchFoundException;
 import client.model.exc.NoMatchException;
-import server.fft.FFT;
+import server.fft.FormatStandard;
 
 import javax.sound.sampled.AudioFormat;
 import java.util.logging.Level;
@@ -24,7 +24,7 @@ public class MicController {
 
     private AudioFormat format;
     public MicController() {
-        format = FFT.FormatStandard.getAudioFormat();
+        format = FormatStandard.getAudioFormat();
     }
 
     /**
