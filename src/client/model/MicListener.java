@@ -3,6 +3,10 @@ package client.model;
 import client.model.exc.MatchFoundException;
 import client.model.exc.NoMatchException;
 
+import javax.sound.sampled.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,11 +24,9 @@ public class MicListener {
     // logger
     private final static Logger logger = Logger.getLogger(MicListener.class.getName());
 
-    // static strings for exception descriptions
-    private static final String MATCH_FOUND, NO_MATCH_FOUND;
-    static {
-        MATCH_FOUND = "Success! A match has been found: ";
-        NO_MATCH_FOUND = "No match has been found. Try Again.";
+    private AudioFormat format;
+    public MicListener() {
+        format = getAudioFormat();
     }
 
     /**
@@ -34,18 +36,27 @@ public class MicListener {
      * @throws NoMatchException no match has been found for 10 seconds
      * @throws MatchFoundException a matching song has been found
      */
-    public static void listen() throws NoMatchException, MatchFoundException {
+    public void listen() throws Exception{
         logger.log(Level.INFO, "Trying to connect to mic...");
-        logger.log(Level.INFO, "Connected successfully.");
-        logger.log(Level.INFO, "Listening...");
 
-        // TODO: implement
-        try {
-            Thread.sleep(1000);
+        MicThread t1 = new MicThread(format);
+        t1.start();
+        try{
+            t1.join();
         }
-        catch(InterruptedException ex) {
+        catch(Exception e) {
 
         }
-        throw new NoMatchException(NO_MATCH_FOUND);
+        t1.checkForException();
+    }
+
+    private AudioFormat getAudioFormat() {
+        float sampleRate = 44100;
+        int sampleSizeInBits = 8;
+        int channels = 1; // mono
+        boolean signed = true;
+        boolean bigEndian = true;
+        return new AudioFormat(sampleRate, sampleSizeInBits, channels,
+                               signed, bigEndian);
     }
 }

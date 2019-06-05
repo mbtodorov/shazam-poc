@@ -168,10 +168,11 @@ public class Main extends Application {
         toggleGoBtnDisable();
         info.setText(LISTENING);
 
+        MicListener listener = new MicListener();
         try {
             logger.log(Level.INFO, "Calling mic-listening algorithm...");
             // listen to mic
-            MicListener.listen();
+            listener.listen();
         }
         catch(Exception exc) {
             // exception will be thrown if a match was found or not
