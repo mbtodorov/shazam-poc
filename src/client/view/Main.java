@@ -1,7 +1,7 @@
 package client.view;
 
 import client.model.MicController;
-import server.hash.Mp3Decoder;
+import server.hash.Mp3Fingerprint;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -9,7 +9,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.event.ActionEvent;
@@ -47,7 +46,7 @@ public class Main extends Application {
     }
 
     // Displays names of all the songs found in the music dir
-    private GridPane songGrid;
+    private VBox songGrid;
     // begins listening to the microphone
     private Button goBtn;
     // logs status of app
@@ -75,10 +74,9 @@ public class Main extends Application {
         computeBtn.getStyleClass().add("compute-btn");
 
         // grid for all songs from music dir
-        songGrid = new GridPane();
+        songGrid = new VBox();
         songGrid.setAlignment(Pos.CENTER);
-        songGrid.setHgap(20);
-        songGrid.setVgap(5);
+        songGrid.setSpacing(10);
 
         // 'Go' button
         goBtn = new Button(BTN_GO);
@@ -130,17 +128,18 @@ public class Main extends Application {
     private void computeSongs(ActionEvent e) {
         logger.log(Level.INFO, "Decoding algorithm called...");
 
-        Mp3Decoder decoder = new Mp3Decoder();
-        String[] songs = decoder.populateDB();
+        Mp3Fingerprint fingerprinter = new Mp3Fingerprint();
+        String[] songs = fingerprinter.generateFingerprints();
 
         logger. log(Level.INFO, "Decoding algorithm executed successfully!");
         // display in grid
-        for(int i = 0; i < songs.length; i++) {
-            Button songBtn = new Button(songs[i]);
+        for(String song : songs) {
+            Button songBtn = new Button(song);
             songBtn.setOnAction(this::showSpectrogram);
             songBtn.getStyleClass().add("song-btn");
+            songBtn.setWrapText(true);
 
-            songGrid.add(songBtn, i%2, i/2);
+            songGrid.getChildren().add(songBtn);
         }
 
         logger.log(Level.INFO, "Decoded Songs added to grid.");
@@ -183,6 +182,8 @@ public class Main extends Application {
             //re-enable button
             toggleGoBtnDisable();
         }
+
+        mStage.sizeToScene();
     }
 
     /**
