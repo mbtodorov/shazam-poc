@@ -41,7 +41,7 @@ public class MicListener extends Thread {
             byte[] targetData = new byte[targetLine.getBufferSize() / 5];
 
             long t = System.currentTimeMillis();
-            long end = t + 1000;
+            long end = t + 3000;
             logger.log(Level.INFO, "Listening...");
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

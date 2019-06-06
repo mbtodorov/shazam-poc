@@ -15,8 +15,8 @@ public class Spectrogram extends Pane {
     private Complex[][] points;
 
     public Spectrogram (Complex[][] points) {
-        setPrefHeight(400);
-        setPrefWidth(800);
+        setPrefHeight(200);
+        setPrefWidth(200);
 
         this.points = points;
 
@@ -34,8 +34,8 @@ public class Spectrogram extends Pane {
         GraphicsContext g2d = canvas.getGraphicsContext2D();
 
         int blockSizeX = 2;
-        int blockSizeY = 4;
-        int size = 100;
+        int blockSizeY = 2;
+        int size = 50;
 
         for (int i = 0; i < points.length; i++) {
             int freq = 1;
@@ -59,7 +59,7 @@ public class Spectrogram extends Pane {
                         blockSizeX, blockSizeY);
 
                 // I used a improviced logarithmic scale and normal scale:
-                if (/* logModeEnabled */false && (Math.log10(line) * Math
+                if ((Math.log10(line) * Math
                         .log10(line)) > 1) {
                     freq += (int) (Math.log10(line) * Math.log10(line));
                 } else {

@@ -1,7 +1,7 @@
 package client.view;
 
 import client.model.MicController;
-import server.hash.Mp3Fingerprint;
+import server.fingerprint.WavFingerprint;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -127,7 +127,7 @@ public class Main extends Application {
      * @param e btn
      */
     private void computeSongs(ActionEvent e) {
-        Mp3Fingerprint fingerprinter = new Mp3Fingerprint();
+        WavFingerprint fingerprinter = new WavFingerprint();
         String[] songs = fingerprinter.scanForSongs();
 
 
@@ -162,7 +162,7 @@ public class Main extends Application {
     /**
      * This method begins listening to the analog audio fed in the
      * microphone of the device that this app is running on. It will
-     * hash and try to find a match for a song in the precomputed db
+     * fingerprint and try to find a match for a song in the precomputed db
      * If nothing has been found in 10 seconds, returns error.
      *
      * @param e btn

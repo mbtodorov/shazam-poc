@@ -8,5 +8,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="JavaFX11" level="application" />
+    <orderEntry type="library" exported="" name="dsp-collection" level="project" />
   </component>
 </module>
