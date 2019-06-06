@@ -180,7 +180,7 @@ public class Main extends Application {
             // exception will be thrown if a match was found or not
             // alert user with results
             info.setText(exc.getMessage());
-            logger.log(Level.INFO, "Listening ended.");
+            logger.log(Level.INFO, "Listening ended.")  ;
         }
         finally {
             //re-enable button

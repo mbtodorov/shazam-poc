@@ -1,7 +1,9 @@
 package server.fingerprint;
 
+import biz.source_code.dsp.filter.FilterCharacteristicsType;
 import biz.source_code.dsp.filter.FilterPassType;
 import biz.source_code.dsp.sound.IirFilterAudioInputStreamExstrom;
+import biz.source_code.dsp.sound.IirFilterAudioInputStreamFisher;
 import server.dsts.Complex;
 import server.fft.FFT;
 
@@ -61,7 +63,7 @@ public class WavFingerprint {
         boolean isStereo = false;
         try {
             //AudioInputStream ais = AudioSystem.getAudioInputStream(song);
-            AudioInputStream ais = IirFilterAudioInputStreamExstrom.getAudioInputStream(AudioSystem.getAudioInputStream(song), FilterPassType.lowpass, 100, 5000, 0);
+            AudioInputStream ais = IirFilterAudioInputStreamFisher.getAudioInputStream(AudioSystem.getAudioInputStream(song), FilterPassType.lowpass, FilterCharacteristicsType.butterworth, 9, 0,5000, 0);
             isStereo = (ais.getFormat().getChannels() >= 2);
             ais.read(audioStereo);
             ais.close();
@@ -79,10 +81,13 @@ public class WavFingerprint {
             audioMono = audioStereo;
         }
 
+        writeWavToSystem(audioMono);
+
         // Step 3: down sample audio file to 44.1/4 kHz
         // TODO: this
 
         byte[] audioMonoDownSampled = downSample(audioMono);
+
         /// maybe the code above is downsampling? idk
 
         // Step 4: Hamming Window Function
@@ -138,9 +143,6 @@ public class WavFingerprint {
             mono[i * 2 + LO] = (byte)(avg & 0xff);
         }
 
-        // UNCOMMENT THIS TO GENERATE A .WAV MONO FILE FROM ORIGINAL STEREO BYTE[]
-        writeWavToSystem(mono);
-
         logger.log(Level.INFO, "Successfully converted song to mono.");
         return mono;
     }
@@ -187,8 +189,8 @@ public class WavFingerprint {
      * @param audio byte[] to be converted to wav
      */
     private void writeWavToSystem(byte[] audio) {
-        ByteArrayInputStream leftbais = new ByteArrayInputStream(audio);
-        AudioInputStream out = new AudioInputStream(leftbais, new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100, 16, 1, 2, 44100, false), audio.length/4);
+        ByteArrayInputStream bais = new ByteArrayInputStream(audio);
+        AudioInputStream out = new AudioInputStream(bais, new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100, 16, 1, 4, 44100, false), audio.length/4);
         try {
             AudioSystem.write(out, AudioFileFormat.Type.WAVE, new File("generated.wav"));
             logger.log(Level.INFO, AudioSystem.getAudioInputStream(new File("generated.wav")).getFormat().toString());
