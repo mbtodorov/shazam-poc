@@ -82,7 +82,7 @@ public class Main extends Application {
         // 'Go' button
         goBtn = new Button(BTN_GO);
         goBtn.setOnAction(this::go);
-        toggleGoBtnDisable(); // initially disabled
+        goBtn.setDisable(true);
         goBtn.getStyleClass().add("go-btn");
 
         // label to display status
@@ -216,13 +216,12 @@ public class Main extends Application {
         SongBtn btn = (SongBtn) e.getSource();
         String song = btn.getText();
 
-        logger.log(Level.INFO, "Begin painting the spectrogram for song " + song + "...");
+        Scene newScene = new Scene(new Spectrogram(btn.getPoints(), song));
+        newScene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
 
-        Scene newScene = new Scene(new Spectrogram(btn.getPoints()));
         Stage newStage = new Stage();
         newStage.setScene(newScene);
+        newStage.setTitle(song);
         newStage.show();
-
-        logger.log(Level.INFO, "Successfully painted spectrogram!");
     }
 }

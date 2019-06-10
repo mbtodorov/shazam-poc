@@ -3,6 +3,7 @@ package server.fingerprint;
 import org.apache.commons.io.IOUtils;
 
 import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
@@ -61,6 +62,7 @@ public class AudioController {
         byte[] audioStereoFiltered = null;
         try {
             // TODO: There is some clipping from the filter
+            // Audio input stream automatically filters the header bytes
             AudioInputStream ais = AudioUtils.lowPassFilterWav(song);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             IOUtils.copy(ais, baos);
