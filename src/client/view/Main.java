@@ -1,7 +1,7 @@
 package client.view;
 
 import client.model.MicController;
-import server.fingerprint.WavFingerprint;
+import server.fingerprint.AudioController;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -127,11 +127,11 @@ public class Main extends Application {
      * @param e btn
      */
     private void computeSongs(ActionEvent e) {
-        WavFingerprint fingerprinter = new WavFingerprint();
+        AudioController fingerprinter = new AudioController();
         String[] songs = fingerprinter.scanForSongs();
 
 
-        logger.log(Level.INFO, "Iterating through songs found... (" + songs.length + " total)");
+        logger.log(Level.INFO, "Iterating through songs (only .wav) found... (" + songs.length + " total)");
 
         for(String song : songs) {
             logger.log(Level.INFO, "Decoding song " + song);
@@ -198,6 +198,11 @@ public class Main extends Application {
      */
     private void toggleGoBtnDisable() {
         goBtn.setDisable(!goBtn.isDisabled());
+        if(goBtn.isDisabled()) {
+            goBtn.setText(LISTENING);
+        } else {
+            goBtn.setText(BTN_GO);
+        }
     }
 
     /**

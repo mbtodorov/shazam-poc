@@ -1,73 +1,66 @@
 package client.view;
 
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import server.dsts.Complex;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 
-import java.util.logging.Level;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.logging.Logger;
 
-public class Spectrogram extends Pane {
+public class Spectrogram extends VBox {
     private final static Logger logger = Logger.getLogger(Spectrogram.class.getName());
-    private final Canvas canvas;
-    private Complex[][] points;
 
-    public Spectrogram (Complex[][] points) {
-        setPrefHeight(200);
-        setPrefWidth(200);
+    private double[][] points;
+
+    public Spectrogram (double[][] points) {
+        setPrefWidth(900);
 
         this.points = points;
 
-        canvas = new Canvas(getWidth(), getHeight());
-        getChildren().add(canvas);
-        widthProperty().addListener(e -> canvas.setWidth(getWidth()));
-        heightProperty().addListener(e -> canvas.setHeight(getHeight()));
+        Label spectrogramLabel = new Label("Spectrogram: ");
+
+        BufferedImage spectrogram = drawSpectrogram(points);
+        javafx.scene.image.Image i = SwingFXUtils.toFXImage(spectrogram, null);
+
+        getChildren().addAll(spectrogramLabel, new ImageView(i));
+        setAlignment(Pos.CENTER);
+        setSpacing(20);
     }
 
-    @Override
-    protected void layoutChildren() {
-        super.layoutChildren();
-
-        logger.log(Level.INFO, "Began painting...");
-        GraphicsContext g2d = canvas.getGraphicsContext2D();
-
-        int blockSizeX = 2;
-        int blockSizeY = 2;
-        int size = 50;
-
-        for (int i = 0; i < points.length; i++) {
-            int freq = 1;
-            for (int line = 1; line < size; line++) {
-                // To get the magnitude of the sound at a given frequency slice
-                // get the abs() from the complex number.
-                // In this case I use Math.log to get a more managable number
-                // (used for color)
-                double magnitude = Math.log(points[i][freq].abs() + 1);
-                // The more blue in the color the more intensity for a given
-                // frequency point:
-                g2d.setFill(Color.rgb(0, (int) magnitude * 10,
-                        (int) magnitude * 20));
-
-//				if (freq < 300 /* && recordPoints[i][freq] == 1 */) {
-//					g2d.setColor(Color.RED);
-//				}
-
-                // Fill:
-                g2d.fillRect(i * blockSizeX, (size - line) * blockSizeY,
-                        blockSizeX, blockSizeY);
-
-                // I used a improviced logarithmic scale and normal scale:
-                if ((Math.log10(line) * Math
-                        .log10(line)) > 1) {
-                    freq += (int) (Math.log10(line) * Math.log10(line));
-                } else {
-                    freq++;
-                }
+    private BufferedImage drawSpectrogram(double[][] points) {
+        BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
+        double ratio;
+        for (int x = 0; x < points.length; x++) {
+            for (int y = 0; y < points[x].length; y++) {
+                ratio = points[x][y];
+                Color newColor = getColor(1.0 - ratio);
+                theImage.setRGB(x, y, newColor.getRGB());
             }
         }
-
-        logger.log(Level.INFO, "Done painting!");
+        theImage = resize(theImage, 800, 300);
+        return theImage;
     }
+
+    private BufferedImage resize(BufferedImage img, int newW, int newH) {
+        Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
+        BufferedImage result = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_ARGB);
+
+        Graphics2D g2d = result.createGraphics();
+        g2d.drawImage(tmp, 0, 0, null);
+        g2d.dispose();
+
+        return result;
+    }
+
+    private Color getColor(double power) {
+        double H = power * 0.3; // Hue (note 0.4 = Green, see huge chart below)
+        double S = 1.0; // Saturation
+        double B = 1.0; // Brightness
+
+        return Color.getHSBColor((float) H, (float) S, (float) B);
+    }
+
 }

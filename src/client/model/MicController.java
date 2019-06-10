@@ -2,7 +2,6 @@ package client.model;
 
 import client.model.exc.MatchFoundException;
 import client.model.exc.NoMatchException;
-import server.fft.FormatStandard;
 
 import javax.sound.sampled.AudioFormat;
 import java.util.logging.Level;
@@ -24,7 +23,7 @@ public class MicController {
 
     private AudioFormat format;
     public MicController() {
-        format = FormatStandard.getAudioFormat();
+        format = getAudioFormat();
     }
 
     /**
@@ -48,5 +47,15 @@ public class MicController {
             System.exit(-1);
         }
         t1.checkForException();
+    }
+
+    public static AudioFormat getAudioFormat() {
+        float sampleRate = 44100;
+        int sampleSizeInBits = 8;
+        int channels = 1; // mono
+        boolean signed = true;
+        boolean bigEndian = true;
+        return new AudioFormat(sampleRate, sampleSizeInBits, channels,
+                signed, bigEndian);
     }
 }
