@@ -10,7 +10,7 @@ import javafx.scene.control.Button;
  * @version 1.0
  * @author Martin Todorov
  */
-public class SongBtn extends Button {
+class SongBtn extends Button {
     // The result of an FFT applied on the song
     private double[][] points;
 
@@ -19,7 +19,7 @@ public class SongBtn extends Button {
      * @param name the song name
      * @param points the result of an FFT applied to the song
      */
-    public SongBtn(String name, double[][] points) {
+    SongBtn(String name, double[][] points) {
         super(name);
         this.points = points;
     }
@@ -28,7 +28,7 @@ public class SongBtn extends Button {
      * Accessor method
      * @return the result of the FFT algorithm
      */
-    public double[][] getPoints() {
+    double[][] getPoints() {
         return points;
     }
 }

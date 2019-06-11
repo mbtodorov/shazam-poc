@@ -35,14 +35,14 @@ public class AudioUtils {
     private final static Logger logger = Logger.getLogger(AudioUtils.class.getName());
 
     /**
-     * A method to apply a lowpass filter to a song. The filter aims to remove all frequencies
+     * A method to apply a low-pass filter to a song. The filter aims to remove all frequencies
      * > 5 kHz. It uses the dps-collections library.
      *
-     * @param song the song to which the lowpass filter should be applied
+     * @param song the song to which the low-pass filter should be applied
      * @return An audio input stream which contains the song with a filter applied on it
      * @throws Exception filter-specific exception
      */
-    public static AudioInputStream lowPassFilterWav (File song) throws Exception {
+    static AudioInputStream lowPassFilterWav(File song) throws Exception {
         FilterPassType filterPassType = FilterPassType.lowpass;
         FilterCharacteristicsType filterCharacteristicsType = FilterCharacteristicsType.butterworth;
         int filterOrder = 4;
@@ -62,7 +62,7 @@ public class AudioUtils {
      * @param in the raw stereo audio
      * @return the raw mono audio
      */
-    public static byte[] convertToMono(byte[] in) {
+    static byte[] convertToMono(byte[] in) {
         logger.log(Level.INFO, "Converting stereo song to mono...");
 
         byte[] result = doubleBitWiseCompression(in);
@@ -72,31 +72,31 @@ public class AudioUtils {
     }
 
     /**
-     * A method to downsample a 44.1 kHz byte[] to 11.025 kHz
+     * A method to down-sample a 44.1 kHz byte[] to 11.025 kHz
      * takes average of groups by 4. Loses some clarity but is good enough
      * for matching.
      *
      * @param original 44.1 kHz byte[]
      * @return 11.025 kHz byte[]
      */
-    public static byte[] downSample(byte[] original) {
-        logger.log(Level.INFO, "Downsampling song...");
+    static byte[] downSample(byte[] original) {
+        logger.log(Level.INFO, "Down-sampling song...");
 
         byte[] result = AudioUtils.doubleBitWiseCompression(AudioUtils.doubleBitWiseCompression(original));
 
-        logger.log(Level.INFO, "Song downsampled to 11025 kHz.");
+        logger.log(Level.INFO, "Song down-sampled to 11025 kHz.");
         return result;
     }
 
     /**
      * This method implements an algorithm to compress a byte[]
-     * exactly by 2. It can used both for mono conversion or downsampling
+     * exactly by 2. It can used both for mono conversion or down-sampling
      * Compression is done by taking the average of two bytes.
      *
      * @param in byte[] array to be compressed
      * @return compressed byte[] (2x less size)
      */
-    public static byte[] doubleBitWiseCompression(byte[] in) {
+    private static byte[] doubleBitWiseCompression(byte[] in) {
         byte[] out = new byte[(int) Math.ceil(in.length/2)];
         for (int i = 0 ; i < out.length/2; ++i){
             int left  = (in[i * 4 + 1]     << 8) | (in[i * 4]     & 0xff);
@@ -114,7 +114,7 @@ public class AudioUtils {
      * @param in the byte[] to be processed
      * @return a double[] representation of the input
      */
-    public static double[] byteToDoubleArr (byte[] in) {
+    static double[] byteToDoubleArr(byte[] in) {
         logger.log(Level.INFO, "Converting byte[] song to double[]...");
 
         int new_length = in.length/2;
@@ -135,7 +135,7 @@ public class AudioUtils {
      * @param audio the input array
      * @return the output point data
      */
-    public static double[][] applyFFT(double[] audio) {
+    static double[][] applyFFT(double[] audio) {
         // TODO: improve FFT computation time
         int length = audio.length;
 
@@ -172,6 +172,7 @@ public class AudioUtils {
             Arrays.fill(inputImag, 0.0);
             double[] WS_array = FFT.fft(Arrays.copyOfRange(audio, i * windowStep, i * windowStep + WS), inputImag, true);
             for (int j = 0; j < nY; j++) {
+                assert WS_array != null;
                 amp_square = (WS_array[2 * j] * WS_array[2 * j]) + (WS_array[2 * j + 1] * WS_array[2 * j + 1]);
                 if (amp_square == 0.0) {
                     results[i][j] = amp_square;
@@ -208,18 +209,18 @@ public class AudioUtils {
      *
      * @param audio byte[] to be converted to wav
      */
+    @SuppressWarnings("unused")
     public static void writeWavToSystem(byte[] audio, String filename) {
-        ByteArrayInputStream bais = new ByteArrayInputStream(audio);
+        ByteArrayInputStream b = new ByteArrayInputStream(audio);
         AudioFormat.Encoding encoding = AudioFormat.Encoding.PCM_SIGNED;
         int sampleRate = 11025;
         int sampleSizeInBits = 16;
         int channels = 1;
         int frameSize = 2;
         int frameRate = 11025;
-        boolean bigEndian = false;
         AudioFormat audioFormat = new AudioFormat(encoding, sampleRate, sampleSizeInBits, channels, frameSize,
-                                                  frameRate, bigEndian);
-        AudioInputStream out = new AudioInputStream(bais, audioFormat, audio.length);
+                                                  frameRate, false);
+        AudioInputStream out = new AudioInputStream(b, audioFormat, audio.length);
         try {
             AudioSystem.write(out, AudioFileFormat.Type.WAVE, new File(filename + ".wav"));
             logger.log(Level.INFO, AudioSystem.getAudioInputStream(new File(filename + ".wav")).getFormat().toString());

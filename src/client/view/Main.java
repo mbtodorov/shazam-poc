@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  * Creates and example GUI for testing purposes.
  *
  * How to use:
- * Step 1: 'Precompute' all songs (found in the music dir)
+ * Step 1: 'Pre-compute' all songs (found in the music dir)
  * Step 2: 'Go' and feed analog audio to microphone of device
  * The program will listen for up to 10 seconds and match
  * the fed audio with one of the precomputed songs. If not - err
@@ -61,6 +61,7 @@ public class Main extends Application {
      * @param stage stage
      * @throws Exception possible exc
      */
+    @SuppressWarnings("RedundantThrows")
     @Override
     public void start(Stage stage) throws Exception{
         logger.log(Level.INFO, "Launching application...");
@@ -117,7 +118,7 @@ public class Main extends Application {
     }
 
     /**
-     * This method precomputes all of the songs found in the
+     * This method pre-computes all of the songs found in the
      * music dir of the root folder of this project. It stores them
      * in a database with hashes so they can be compared to later.
      * Shazam  has it's songs computed beforehand.
@@ -164,6 +165,7 @@ public class Main extends Application {
      *
      * @param e btn
      */
+    @SuppressWarnings("unused")
     private void go(ActionEvent e) {
         toggleGoBtnDisable();
 

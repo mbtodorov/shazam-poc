@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * @version 1.0
  * @author Martin Todorov
  */
-public class Spectrogram extends VBox {
+class Spectrogram extends VBox {
     // logger
     private final static Logger logger = Logger.getLogger(Spectrogram.class.getName());
     // Strings used for the GUI
@@ -37,7 +37,7 @@ public class Spectrogram extends VBox {
      * @param points the points for the spectrogram
      * @param songName the name of the song
      */
-    public Spectrogram (double[][] points, String songName) {
+    Spectrogram(double[][] points, String songName) {
         setPrefWidth(900);
 
         this.points = points;
@@ -94,6 +94,15 @@ public class Spectrogram extends VBox {
         return theImage;
     }
 
+    /**
+     * A method to draw discernible key points from the FFT result
+     * represented in the drawSpectrogram() method. It extracts the key points
+     * (for a second time) from the AudioFingerprint class as they are not passed
+     * as a a parameter to this class. It represents any significant points with
+     * a black square around them and all other points - white. uses buffered image
+     *
+     * @return the result buffered image representing the keypoints
+     */
     private BufferedImage drawKeyPoints() {
         // get the keypoints
         double[][] keyPoints = AudioFingerprint.extractKeyPoints(points);
@@ -108,9 +117,9 @@ public class Spectrogram extends VBox {
                     if(xFloor < 0) xFloor = 0; // edge
                     int xCeil = x + sqSize;
                     if(xCeil > keyPoints.length) xCeil = keyPoints.length - 1; // edge
-                    int yFloor = y - sqSize/2;
+                    int yFloor = y - sqSize/2; // divide by 2 because of resize
                     if(yFloor < 0) yFloor = 0; // edge
-                    int yCeil = y + sqSize/2;
+                    int yCeil = y + sqSize/2; // divide by 2 because of resize
                     if(yCeil > keyPoints[0].length) yCeil = keyPoints[0].length - 1; // edge
                     for(int i = xFloor; i < xCeil; i ++ ) { //iterate and paint square around point
                         for(int j = yFloor; j < yCeil; j ++) {
@@ -146,7 +155,7 @@ public class Spectrogram extends VBox {
     }
 
     /**
-     * A method to get a color based on the intenisty of the
+     * A method to get a color based on the intensity of the
      * amplitude
      *
      * @param power the intensity

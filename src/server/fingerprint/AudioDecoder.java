@@ -49,7 +49,7 @@ public class AudioDecoder {
 
     /**
      * Takes a file (wav) and undergoes a series of conversions:
-     * lowpass filter for frequencies > 5000 hZ; downsample to 11025 hZ;
+     * low-pass filter for frequencies > 5000 hZ; down-sample to 11025 hZ;
      * convert to mono; hamming window function with size 1024; fft. Finally
      * it extracts a fingerprint and  populates a database.
      *

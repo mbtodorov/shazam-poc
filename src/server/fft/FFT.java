@@ -100,7 +100,7 @@ public class FFT {
 
         // Here I have to mix xReal and xImag to have an array (yes, it should
         // be possible to do this stuff in the earlier parts of the code, but
-        // it's here to readibility).
+        // it's here to readability).
         double[] newArray = new double[xReal.length * 2];
         double radice = 1 / Math.sqrt(n);
         for (int i = 0; i < newArray.length; i += 2) {

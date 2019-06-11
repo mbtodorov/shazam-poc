@@ -52,14 +52,14 @@ public class AudioFingerprint {
                 }
             }
 
-            average = sum/5.8; // TODO: mess around with coeficient - the lower the less points
+            average = sum/6.5; // TODO: mess around with coefficient - the lower the less points
             sum = 0;
 
             // iterate and allocate values which pass over the average
             // + a constant value to eliminate any points which are considered due
             // to inherently low bands
             for(int j = 0; j < in[0].length; j ++) {
-                if(in[i][j] > average + 0.2) {
+                if(in[i][j] > average + 0.27) {
                     out[i][j] = in[i][j];
                 }
             }
