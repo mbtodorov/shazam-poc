@@ -56,54 +56,26 @@ public class AudioUtils {
     }
 
     /**
-     * This method implements an algorithm to compress a byte[]
-     * exactly by 2. It can used both for mono conversion or downsampling
-     * Compression is done by taking the average of two bytes.
-     * @param input byte[] array to be compressed
-     * @return compressed byte[] (2x less size)
+     * A method to convert a stereo byte[] to mono byte[]
+     * It uses the doubleBitWiseCompressionAlgorithm
+     *
+     * @param in the raw stereo audio
+     * @return the raw mono audio
      */
-    public static byte[] doubleBitWiseCompression(byte[] input) {
-        byte[] output = new byte[(int) Math.ceil(input.length/2)];
-        int HI = 1;
-        int LO = 0;
-        for (int i = 0 ; i < output.length/2; ++i){
-            int left = (input[i * 4 + HI] << 8) | (input[i * 4 + LO] & 0xff);
-            int right = (input[i * 4 + 2 + HI] << 8) | (input[i * 4 + 2 + LO] & 0xff);
-            int avg = (left + right) / 2;
-            output[i * 2 + HI] = (byte)((avg >> 8) & 0xff);
-            output[i * 2 + LO] = (byte)(avg & 0xff);
-        }
-        return output;
-    }
-
-    /**
-     * This method converts a byte[] input to a double[]
-     * and converts it to mono channel in the meanwhile
-     * @param in the byte[] to be processed
-     * @return a double[] representation of the input (converted to mono)
-     */
-    public static double[] getDoubleMonoArray (byte[] in) {
+    public static byte[] convertToMono(byte[] in) {
         logger.log(Level.INFO, "Converting stereo song to mono...");
 
-        //declare double array for mono
-        int new_length = in.length/4;
-        double[] out = new double[new_length];
+        byte[] result = doubleBitWiseCompression(in);
 
-        double left, right;
-        for (int i = 0; 4*i+3 < in.length; i++){
-            left = (short)((in[4*i+1] & 0xff) << 8) | (in[4*i] & 0xff);
-            right = (short)((in[4*i+3] & 0xff) << 8) | (in[4*i+2] & 0xff);
-            out[i] = (left+right)/2.0;
-        }
-
-        logger.log(Level.INFO, "Successfully converted song to mono. Return double[] instead of byte[]");
-        return out;
+        logger.log(Level.INFO, "Successfully converted song to mono!");
+        return result;
     }
 
     /**
      * A method to downsample a 44.1 kHz byte[] to 11.025 kHz
      * takes average of groups by 4. Loses some clarity but is good enough
      * for matching.
+     *
      * @param original 44.1 kHz byte[]
      * @return 11.025 kHz byte[]
      */
@@ -117,8 +89,49 @@ public class AudioUtils {
     }
 
     /**
+     * This method implements an algorithm to compress a byte[]
+     * exactly by 2. It can used both for mono conversion or downsampling
+     * Compression is done by taking the average of two bytes.
+     *
+     * @param in byte[] array to be compressed
+     * @return compressed byte[] (2x less size)
+     */
+    public static byte[] doubleBitWiseCompression(byte[] in) {
+        byte[] out = new byte[(int) Math.ceil(in.length/2)];
+        for (int i = 0 ; i < out.length/2; ++i){
+            int left  = (in[i * 4 + 1]     << 8) | (in[i * 4]     & 0xff);
+            int right = (in[i * 4 + 2 + 1] << 8) | (in[i * 4 + 2] & 0xff);
+            int avg = (left + right) / 2;
+            out[i * 2 + 1] = (byte) ((avg >> 8) & 0xff);
+            out[i * 2]     = (byte)  (avg       & 0xff);
+        }
+        return out;
+    }
+
+    /**
+     * This method converts a byte[] input to a double[]
+     *
+     * @param in the byte[] to be processed
+     * @return a double[] representation of the input
+     */
+    public static double[] byteToDoubleArr (byte[] in) {
+        logger.log(Level.INFO, "Converting byte[] song to double[]...");
+
+        int new_length = in.length/2;
+        double[] out = new double[new_length];
+
+        for (int i = 0; 2*i+1 < in.length; i++){
+            out[i] = (short)((in[2*i+1] & 0xff) << 8) | (in[2*i] & 0xff);
+        }
+
+        logger.log(Level.INFO, "Successfully converted byte[] to double[]!");
+        return out;
+    }
+
+    /**
      * A method to apply FFT to a double[] and return a double[][]
      * containing point data required for drawing a spectrogram
+     *
      * @param audio the input array
      * @return the output point data
      */
@@ -192,6 +205,7 @@ public class AudioUtils {
      * A method to write a byte[] to a .wav file. Used for testing purposes
      * Double-check parameters for audio format. They are not determined
      * dynamically. They need to be adjusted based on what byte[] you're passing.
+     *
      * @param audio byte[] to be converted to wav
      */
     public static void writeWavToSystem(byte[] audio, String filename) {

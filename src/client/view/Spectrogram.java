@@ -5,6 +5,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import server.fingerprint.AudioFingerprint;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -22,9 +23,14 @@ import java.util.logging.Logger;
 public class Spectrogram extends VBox {
     // logger
     private final static Logger logger = Logger.getLogger(Spectrogram.class.getName());
+    // Strings used for the GUI
+    private static final String SPECTROGRAM_LBL, KEYPTS_LBL;
+    static {
+        SPECTROGRAM_LBL = " Spectrogram for ";
+        KEYPTS_LBL = "Key points extracted from the spectrogram:";
+    }
 
     private double[][] points;
-
     /**
      * Constructor for class Spectrogram
      *
@@ -37,7 +43,7 @@ public class Spectrogram extends VBox {
         this.points = points;
 
         // label for the spectrogram
-        Label spectrogramLabel = new Label("Spectrogram for " + songName.substring(0, songName.length()-4) + ": ");
+        Label spectrogramLabel = new Label(SPECTROGRAM_LBL + songName.substring(0, songName.length()-4) + ": ");
         spectrogramLabel.setWrapText(true);
         spectrogramLabel.getStyleClass().add("spectrogram-label");
 
@@ -48,25 +54,29 @@ public class Spectrogram extends VBox {
         logger.log(Level.INFO, "Successfully painted spectrogram!");
 
         // label for the keypoints
-        Label keyPointsLabel = new Label("Key points: ");
+        Label keyPointsLabel = new Label(KEYPTS_LBL);
         keyPointsLabel.getStyleClass().add("spectrogram-label");
 
         // the key points
         logger.log(Level.INFO, "Begin painting the keypoints of the spectrogram...");
-        // TODO: keypoints painter:
+        BufferedImage keyPoints = drawKeyPoints();
+        javafx.scene.image.Image j = SwingFXUtils.toFXImage(keyPoints, null);
         logger.log(Level.INFO, "Successfully painted keypoints!");
 
         // add all elements as children and align them in the center
-        getChildren().addAll(spectrogramLabel, new ImageView(i), keyPointsLabel);
+        getChildren().addAll(spectrogramLabel, new ImageView(i), keyPointsLabel, new ImageView(j),
+                new Label(""), new Label("")); // spacer labels
         setAlignment(Pos.CENTER);
     }
 
     /**
      * A method to draw a spectrogram based on a double[][]
      * which is the result of an FFT.
-     * @return an image represeting the spectrogram
+     *
+     * @return an image representing the spectrogram
      */
     private BufferedImage drawSpectrogram() {
+
         BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
         double ratio;
 
@@ -80,20 +90,53 @@ public class Spectrogram extends VBox {
         }
 
         // resize so it can fit in the window
-        theImage = resize(theImage, 800, 300);
+        theImage = resize(theImage);
+        return theImage;
+    }
+
+    private BufferedImage drawKeyPoints() {
+        // get the keypoints
+        double[][] keyPoints = AudioFingerprint.extractKeyPoints(points);
+        BufferedImage theImage = new BufferedImage(keyPoints.length, keyPoints[0].length, BufferedImage.TYPE_INT_RGB);
+
+        for(int x = 0; x < keyPoints.length; x++) {
+            for(int y = 0; y < keyPoints[x].length; y++) {
+                // if the keypoint is not 0 paint a black square around it
+                if(keyPoints[x][y] != 0) {
+                    int sqSize = 4;
+                    int xFloor = x - sqSize;
+                    if(xFloor < 0) xFloor = 0; // edge
+                    int xCeil = x + sqSize;
+                    if(xCeil > keyPoints.length) xCeil = keyPoints.length - 1; // edge
+                    int yFloor = y - sqSize/2;
+                    if(yFloor < 0) yFloor = 0; // edge
+                    int yCeil = y + sqSize/2;
+                    if(yCeil > keyPoints[0].length) yCeil = keyPoints[0].length - 1; // edge
+                    for(int i = xFloor; i < xCeil; i ++ ) { //iterate and paint square around point
+                        for(int j = yFloor; j < yCeil; j ++) {
+                            Color black = Color.BLACK;
+                            theImage.setRGB(i, j, black.getRGB());
+                        }
+                    }
+                } else { // if its not paint the pixel white
+                    Color white = Color.WHITE;
+                    theImage.setRGB(x, y, white.getRGB());
+                }
+            }
+        }
+        theImage = resize(theImage);
         return theImage;
     }
 
     /**
-     * A method to reisze a buffered image
+     * A method to resize a buffered image to 800(w) by 300(h)
+     *
      * @param img the image to be resized
-     * @param newW the new width
-     * @param newH the new height
      * @return the resized image
      */
-    private BufferedImage resize(BufferedImage img, int newW, int newH) {
-        Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
-        BufferedImage result = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_ARGB);
+    private BufferedImage resize(BufferedImage img) {
+        Image tmp = img.getScaledInstance(800, 300, Image.SCALE_SMOOTH);
+        BufferedImage result = new BufferedImage(800, 300, BufferedImage.TYPE_INT_ARGB);
 
         Graphics2D g2d = result.createGraphics();
         g2d.drawImage(tmp, 0, 0, null);
@@ -105,6 +148,7 @@ public class Spectrogram extends VBox {
     /**
      * A method to get a color based on the intenisty of the
      * amplitude
+     *
      * @param power the intensity
      * @return the color
      */

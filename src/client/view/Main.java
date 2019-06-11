@@ -1,7 +1,7 @@
 package client.view;
 
 import client.model.MicController;
-import server.fingerprint.AudioController;
+import server.fingerprint.AudioDecoder;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -13,7 +13,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.event.ActionEvent;
 
-import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -121,14 +120,13 @@ public class Main extends Application {
      * This method precomputes all of the songs found in the
      * music dir of the root folder of this project. It stores them
      * in a database with hashes so they can be compared to later.
-     * Shazam supposedly has it's songs computer beforehand.
+     * Shazam  has it's songs computed beforehand.
      * Then display them in the GUI grid
      *
      * @param e btn
      */
     private void computeSongs(ActionEvent e) {
-        AudioController fingerprinter = new AudioController();
-        String[] songs = fingerprinter.scanForSongs();
+        String[] songs = AudioDecoder.scanForSongs();
 
 
         logger.log(Level.INFO, "Iterating through songs (only .wav) found... (" + songs.length + " total)");
@@ -136,13 +134,12 @@ public class Main extends Application {
         for(String song : songs) {
             logger.log(Level.INFO, "Decoding song " + song);
 
-            SongBtn songBtn = new SongBtn(song, fingerprinter.decode(new File("music/" + song)));
+            SongBtn songBtn = new SongBtn(song, AudioDecoder.decodeWav(song));
             songBtn.setOnAction(this::showSpectrogram);
             songBtn.getStyleClass().add("song-btn");
             songBtn.setWrapText(true);
 
             songGrid.getChildren().add(songBtn);
-
             logger.log(Level.INFO, "Done decoding " + song);
         }
 
