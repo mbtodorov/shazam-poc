@@ -15,7 +15,7 @@ and I later match mic input to those fingerprints.
 
 ####Generating fingerprints for songs
 
-#####1. Get a .wav file
+##### ⋅⋅* Get a .wav file
 &emsp; Look for all .wav files in the /music folder and return an String[] with all of their names
 The array is used to init a button for each element and call a decode method on the file it represents. The 
 steps below are all executed inside the AudioDecode.decodeFile() method. It is a controller class which
