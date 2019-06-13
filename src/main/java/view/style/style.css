@@ -1,0 +1,98 @@
+/* Define accent and background color: */
+*{
+    primary-color: #01a7ff;
+    primary-color-dark: #0076b5;
+    primary-background-color: #2A2E37;
+}
+
+.root {
+    -fx-font-size: 12pt;
+    -fx-font-family: Tahoma, Geneva, sans-serif;
+    -fx-background: primary-background-color;
+}
+
+.root-pane {
+    -fx-padding: 30 0 30 0;
+    -fx-pref-width: 400;
+    -fx-spacing: 20;
+}
+
+.compute-btn {
+    -fx-background-color: primary-color;
+    -fx-text-fill: #fff;
+    -fx-background-radius: 5px;
+    -fx-font-family: Tahoma, Geneva, sans-serif;
+    -fx-pref-height: 20px;
+    -fx-padding: 10 20 10 20 ;
+    -fx-font-size: 14pt;
+    -fx-font-weight: bold;
+}
+
+.compute-btn:hover {
+    -fx-background-color: primary-color-dark;
+    -fx-cursor: hand;
+}
+
+.compute-btn:pressed {
+    -fx-opacity: 0.75;
+}
+
+.song-btn {
+    -fx-background-color: transparent;
+    -fx-font-family: Tahoma, Geneva, sans-serif;
+    -fx-text-fill: #d5d5d5;
+    -fx-padding: 5;
+    -fx-pref-height: 15;
+    -fx-font-size: 10pt;
+}
+
+.song-btn:hover {
+    -fx-cursor: hand;
+    -fx-background-color: #5d5d5d;
+}
+
+.song-btn:pressed {
+    -fx-opacity: 0.75;
+}
+
+.match-label {
+    -fx-text-fill: #d5d5d5;
+    -fx-font-family: Tahoma, Geneva, sans-serif;
+    -fx-padding: 0 0 20 0;
+    -fx-font-family: Tahoma, Geneva, sans-serif;
+}
+
+
+.info-label {
+    -fx-text-fill: #d5d5d5;
+    -fx-font-size: 10pt;
+    -fx-font-family: Tahoma, Geneva, sans-serif;
+    -fx-padding: 0 30 0 30;
+    -fx-font-family: Tahoma, Geneva, sans-serif;
+}
+
+.go-btn {
+    -fx-background-color: primary-color;
+    -fx-text-fill: #fff;
+    -fx-font-weight: bold;
+    -fx-font-size: 20pt;
+    -fx-background-radius: 130px;
+    -fx-pref-height: 130px;
+    -fx-pref-width: 130px;
+}
+
+.go-btn:hover {
+    -fx-background-color: primary-color-dark;
+    -fx-cursor: hand;
+}
+
+.go-btn:pressed {
+    -fx-opacity: 0.75;
+}
+
+.spectrogram-label {
+    -fx-font-size: 14pt;
+    -fx-font-family: Tahoma, Geneva, sans-serif;
+    -fx-text-fill: #fff;
+    -fx-padding: 20 0 20 0;
+}

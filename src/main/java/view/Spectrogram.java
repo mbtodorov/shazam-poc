@@ -1,11 +1,12 @@
-package client.view;
+package main.java.view;
 
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import server.fingerprint.AudioFingerprint;
+import main.java.model.fingerprint.AudioFingerprint;
+import main.java.model.datastructures.KeyPoint;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -99,40 +100,42 @@ class Spectrogram extends VBox {
      * represented in the drawSpectrogram() method. It extracts the key points
      * (for a second time) from the AudioFingerprint class as they are not passed
      * as a a parameter to this class. It represents any significant points with
-     * a black square around them and all other points - white. uses buffered image
+     * a black square around them and all other points - white. Uses buffered image
      *
      * @return the result buffered image representing the keypoints
      */
     private BufferedImage drawKeyPoints() {
         // get the keypoints
-        double[][] keyPoints = AudioFingerprint.extractKeyPoints(points);
-        BufferedImage theImage = new BufferedImage(keyPoints.length, keyPoints[0].length, BufferedImage.TYPE_INT_RGB);
+        KeyPoint[] keyPoints = AudioFingerprint.extractKeyPoints(points);
+        BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
 
-        for(int x = 0; x < keyPoints.length; x++) {
-            for(int y = 0; y < keyPoints[x].length; y++) {
-                // if the keypoint is not 0 paint a black square around it
-                if(keyPoints[x][y] != 0) {
-                    int sqSize = 4;
-                    int xFloor = x - sqSize;
-                    if(xFloor < 0) xFloor = 0; // edge
-                    int xCeil = x + sqSize;
-                    if(xCeil > keyPoints.length) xCeil = keyPoints.length - 1; // edge
-                    int yFloor = y - sqSize/2; // divide by 2 because of resize
-                    if(yFloor < 0) yFloor = 0; // edge
-                    int yCeil = y + sqSize/2; // divide by 2 because of resize
-                    if(yCeil > keyPoints[0].length) yCeil = keyPoints[0].length - 1; // edge
-                    for(int i = xFloor; i < xCeil; i ++ ) { //iterate and paint square around point
-                        for(int j = yFloor; j < yCeil; j ++) {
-                            Color black = Color.BLACK;
-                            theImage.setRGB(i, j, black.getRGB());
-                        }
-                    }
-                } else { // if its not paint the pixel white
-                    Color white = Color.WHITE;
-                    theImage.setRGB(x, y, white.getRGB());
+        for (int x = 0; x < points.length; x++) {
+            for (int y = 0; y < points[x].length; y++) {
+                Color white = Color.WHITE;
+                theImage.setRGB(x, y, white.getRGB());
+            }
+        }
+
+        for(KeyPoint kp : keyPoints) {
+            int x = kp.getTime();
+            int y = kp.getFrequency();
+            int sqSize = 4;
+            int xFloor = x - sqSize;
+            if(xFloor < 0) xFloor = 0; // edge
+            int xCeil = x + sqSize;
+            if(xCeil > points.length) xCeil = points.length - 1; // edge
+            int yFloor = y - sqSize/2; // divide by 2 because of resize
+            if(yFloor < 0) yFloor = 0; // edge
+            int yCeil = y + sqSize/2; // divide by 2 because of resize
+            if(yCeil > points[0].length) yCeil = points[0].length - 1; // edge
+            for(int i = xFloor; i < xCeil; i ++ ) { //iterate and paint square around point
+                for(int j = yFloor; j < yCeil; j ++) {
+                    Color black = Color.BLACK;
+                    theImage.setRGB(i, j, black.getRGB());
                 }
             }
         }
+
         theImage = resize(theImage);
         return theImage;
     }
@@ -144,8 +147,12 @@ class Spectrogram extends VBox {
      * @return the resized image
      */
     private BufferedImage resize(BufferedImage img) {
-        Image tmp = img.getScaledInstance(800, 300, Image.SCALE_SMOOTH);
-        BufferedImage result = new BufferedImage(800, 300, BufferedImage.TYPE_INT_ARGB);
+        int width = img.getWidth();
+        if(width > 800) {
+            width = 800;
+        }
+        Image tmp = img.getScaledInstance(width, 300, Image.SCALE_SMOOTH);
+        BufferedImage result = new BufferedImage(width, 300, BufferedImage.TYPE_INT_ARGB);
 
         Graphics2D g2d = result.createGraphics();
         g2d.drawImage(tmp, 0, 0, null);

@@ -4,7 +4,7 @@ it is an app used to recognize audio. It has a database of millions of precomput
 to match the crappy audio from your phone's microphone while bypassing side noise in a matter of seconds! It is
 like magic!
 <br>
-My take is an entirely Java-based solution. I have recreated the client-server interaction in the original product.
+My take is an entirely Java-based solution. I have recreated the main.java-server interaction in the original product.
 I have very closely followed a great article on how 'Shazam' works and I highly recommend reading to fully
 comprehend the code I have. Here is a link: http://coding-geek.com/how-shazam-works/
 
@@ -54,7 +54,7 @@ using the exact same algorithm as for the stereo to mono conversion, but twice.
 #### 6. Apply FFT with window size 1024
 &emsp; Finally I am ready to apply an FFT and get a double[][] which can be used to draw a spectrogram of the song.
 This is also a feature I implemented for testing purposes - how else was I supposed to know if everything works.
-The decodeSong() algorithm returns the FFT result which is then passed along to the songBtn for the respective song.
+The decodeWav() algorithm returns the FFT result which is then passed along to the songBtn for the respective song.
 When pressed the button will pop-up a new window containing an image of the spectrogram as well as extracted key points.
 
 #### 7. Extract key points from FFT result
