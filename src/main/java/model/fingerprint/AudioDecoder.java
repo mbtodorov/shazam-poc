@@ -1,8 +1,9 @@
 package main.java.model.fingerprint;
 
+import main.java.model.db.DBModifier;
+import main.java.model.db.DBUtils;
+import main.java.model.fingerprint.datastructures.KeyPoint;
 import org.apache.commons.io.IOUtils;
-import main.java.model.datastructures.KeyPoint;
-import main.java.model.db.DBController;
 
 import javax.sound.sampled.AudioInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,10 +13,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This class is responsible for decoding songs and extracting their
+ * This class is responsible for decoding audio and extracting
  * fingerprints. It is a controller class which manages order of execution
  * of the algorithms provided by the AudioUtils class. It has only static
- * methods so it is a thread-safe class
+ * methods so it is a thread-safe class.
  *
  * It looks for .wav files in {root dir}/music/*.wav
  *
@@ -64,8 +65,7 @@ public class AudioDecoder {
         long start = System.currentTimeMillis(); // used for logging speed of algorithm
 
         // This will be needed to determine which part of the algorithm needs to be executed
-
-        boolean withHashing = !DBController.isSongInDB(songName);
+        boolean withHashing = !DBUtils.isSongInDB(songName);
 
         // get the song
         File song = new File("music/" + songName);
@@ -82,6 +82,7 @@ public class AudioDecoder {
             baos.flush();
             baos.close();
             audioStereoFiltered = baos.toByteArray();
+            ais.close();
         }
         catch(Exception e) {
             logger.log(Level.SEVERE, "Error streaming song " + song.getName() + " to byte array.");
@@ -108,6 +109,7 @@ public class AudioDecoder {
         // hashed in the database, as it is a long process to undergo for every app launch.
 
         if(withHashing) { // The algorithm for populating DB with hashes
+
             // Step 1: Extract only the key points from the FFT results
 
             KeyPoint[] keyPoints = AudioFingerprint.extractKeyPoints(FFTResults);
@@ -116,17 +118,18 @@ public class AudioDecoder {
 
             String[] hashes = AudioFingerprint.hash(keyPoints);
 
-            // TODO: check if this works as intended
             synchronized (AudioDecoder.class) { // threads can't write to DB at the same time
                 // Step 3: init an entry for the song in the database
 
-                DBController.initSongInDB(songName);
+                DBModifier.initSongInDB(songName);
 
                 // Step 4: insert the hashes in the DB
 
-                DBController.insertHashes(hashes, songName);
+                DBModifier.insertHashes(hashes, songName);
             }
         }
+
+        AudioUtils.writeWavToSystem(audioDownSampled, "test");
 
         // log time taken
         long end = System.currentTimeMillis();
@@ -134,5 +137,26 @@ public class AudioDecoder {
 
         // return double[][] for spectrogram visualization
         return FFTResults;
+    }
+
+    public static void decodeMic(AudioInputStream ais) {
+        byte[] audio = null;
+
+        System.out.println("im hereeeeee alsooo");
+        try {
+            // TODO: There is some clipping from the filter
+            // Audio input stream automatically filters the header bytes
+            AudioUtils.lowPassFilterAIS(ais);
+            System.out.println("done");
+            System.out.println(ais.available());
+            audio = ais.readAllBytes();
+        }
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error streaming song " + " to byte array.");
+            logger.log(Level.SEVERE, e.getMessage());
+        }
+
+        System.out.println("im hereeeeee");
+        AudioUtils.writeWavToSystem(audio, "mic");
     }
 }

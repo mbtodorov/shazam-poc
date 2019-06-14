@@ -3,7 +3,7 @@ package main.java.model.fingerprint;
 import biz.source_code.dsp.filter.FilterCharacteristicsType;
 import biz.source_code.dsp.filter.FilterPassType;
 import biz.source_code.dsp.sound.IirFilterAudioInputStreamFisher;
-import main.java.model.fft.FFT;
+import main.java.model.fingerprint.fft.FFT;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -49,10 +49,25 @@ public class AudioUtils {
         double ripple = 0;
         double fcf1 = 4000;
         double fcf2 = 0;
-        logger.log(Level.INFO, "Applying low pass filter to song...");
+        logger.log(Level.INFO, "Applying low-pass filter to song...");
         AudioInputStream inputStream = AudioSystem.getAudioInputStream(song);
-        return IirFilterAudioInputStreamFisher.getAudioInputStream(inputStream, filterPassType,
-               filterCharacteristicsType, filterOrder, ripple, fcf1, fcf2);
+        AudioInputStream result = IirFilterAudioInputStreamFisher.getAudioInputStream(inputStream, filterPassType,
+                filterCharacteristicsType, filterOrder, ripple, fcf1, fcf2);
+
+        logger.log(Level.INFO, "Successfully applied low-pass filter to song!");
+        return result;
+    }
+
+    static AudioInputStream lowPassFilterAIS(AudioInputStream ais) throws Exception {
+        FilterPassType filterPassType = FilterPassType.lowpass;
+        FilterCharacteristicsType filterCharacteristicsType = FilterCharacteristicsType.butterworth;
+        int filterOrder = 4;
+        double ripple = 0;
+        double fcf1 = 4000;
+        double fcf2 = 0;
+        logger.log(Level.INFO, "Applying low pass filter to mic...");
+        return IirFilterAudioInputStreamFisher.getAudioInputStream(ais, filterPassType,
+                filterCharacteristicsType, filterOrder, ripple, fcf1, fcf2);
     }
 
     /**

@@ -1,7 +1,8 @@
 package main.java.model.fingerprint;
 
-import main.java.model.datastructures.KeyPoint;
-import main.java.model.datastructures.MyTargetZone;
+import main.java.model.fingerprint.datastructures.KeyPoint;
+import main.java.model.fingerprint.datastructures.MyTargetZone;
+import main.java.model.fingerprint.datastructures.TargetZone;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -119,7 +120,7 @@ public class AudioFingerprint {
 
         for(int i = 0; i < keyPtsLen - (zoneSize + 1); i += (zoneSize + 1)) {
             KeyPoint[] zone = Arrays.copyOfRange(points, i, zoneSize + 1 +i);
-            MyTargetZone tz = new MyTargetZone(zone);
+            TargetZone tz = new MyTargetZone(zone);
             List<String> hashes = Arrays.asList(tz.getHashes());
             resultList.addAll(hashes);
         }
