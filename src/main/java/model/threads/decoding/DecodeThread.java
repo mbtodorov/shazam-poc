@@ -3,6 +3,9 @@ package main.java.model.threads.decoding;
 import main.java.view.SongBtn;
 import main.java.model.fingerprint.AudioDecoder;
 
+/**
+ * Test comment
+ */
 public class DecodeThread extends Thread {
     private String song;
     private SongBtn btn;
