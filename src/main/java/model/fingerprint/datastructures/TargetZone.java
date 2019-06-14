@@ -1,4 +1,4 @@
-package main.java.model.datastructures;
+package main.java.model.fingerprint.datastructures;
 
 /**
  * An interface defining what a TargetZone should do.

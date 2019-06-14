@@ -1,8 +1,7 @@
 package main.java.view;
 
+import com.jfoenix.controls.JFXButton;
 import javafx.application.Platform;
-import javafx.scene.control.Button;
-
 /**
  * A simple class used for buttons that are linked with songs
  * Used to store the result from applying FFT on the song.
@@ -10,7 +9,7 @@ import javafx.scene.control.Button;
  * @version 1.0
  * @author Martin Todorov
  */
-public class SongBtn extends Button {
+public class SongBtn extends JFXButton {
     // The result of an FFT applied on the song
     private double[][] points;
     // the name
@@ -51,9 +50,22 @@ public class SongBtn extends Button {
         // now that there is a value assigned, the button can be pressed to generate
         // a spectrogram using the double[][]
         setDisable(false);
+
+        // remove 'loading...'
         updateText();
     }
 
+    /**
+     * Accessor method
+     *
+     * @return the name of the song, independent of the button text
+     */
+    public String getName() { return name;}
+
+    /**
+     * This method is called from a non javafx thread and it therefore uses
+     * the runLater() method. It removes the 'loading...' from the button text
+     */
     public void updateText() {
         Platform.runLater(() -> setText(name));
     }

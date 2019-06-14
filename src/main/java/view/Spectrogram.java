@@ -6,7 +6,7 @@ import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import main.java.model.fingerprint.AudioFingerprint;
-import main.java.model.datastructures.KeyPoint;
+import main.java.model.fingerprint.datastructures.KeyPoint;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;

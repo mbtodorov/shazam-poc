@@ -1,8 +1,12 @@
 package main.java.view;
 
-import main.java.model.threads.DecodeThread;
-import main.java.model.matching.microphone.MicController;
-import main.java.model.db.DBController;
+import com.jfoenix.controls.JFXButton;
+import com.jfoenix.controls.JFXToggleButton;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ToggleButton;
+import javafx.stage.FileChooser;
+import main.java.model.threads.decoding.DecodeThread;
+import main.java.model.db.DBUtils;
 import main.java.model.fingerprint.AudioDecoder;
 
 import javafx.application.Application;
@@ -15,7 +19,10 @@ import javafx.scene.text.TextAlignment;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.event.ActionEvent;
+import main.java.model.threads.matching.MicListener;
+import main.java.model.threads.matching.StreamMatcher;
 
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,7 +31,7 @@ import java.util.logging.Logger;
  * Creates and example GUI for testing purposes.
  *
  * The GUI contains detailed instructions on the usage of the
- * application
+ * application.
  *
  * @version 1.0
  * @author Martin Todorov
@@ -36,38 +43,44 @@ public class Main extends Application {
     // Strings used for the GUI
     private static final String WIN_TITLE, BTN_COMPUTE, BTN_GO,
                                 LISTENING, COMPUTATION_DONE, NO_NEW_SONGS,
-                                NEW_SONGS;
+                                NEW_SONGS, USE_INPUT_STREAM, CHOOSE_FILE;
     static {
         WIN_TITLE = "Shazam PoC";
         BTN_COMPUTE = "Compute";
         BTN_GO = "Go";
         LISTENING = "Listening...";
-        NO_NEW_SONGS = "All of the songs found in the music dir are already hashed in the database and " +
-                "can be recognized. Clicking the 'compute' button will compute their spectrogram only.";
-        NEW_SONGS = "There are songs in the music dir which are not hashed in the database and can't be recognized. " +
-                "Clicking the 'compute' button will generate a spectrogram for all songs and hash those which are new. " +
-                "Total number of new songs found: ";
+        NO_NEW_SONGS = "All songs in the music dir are recognizable. \n 'Compute' will generate their spectrograms only.";
+        NEW_SONGS = " song(s) in the music dir which are not recognizable. \n 'Compute' will generate their " +
+                "fingerprints. ";
         COMPUTATION_DONE = "The following songs are recognizable:";
+        USE_INPUT_STREAM = "Use input stream instead of mic.";
+        CHOOSE_FILE = "Choose File";
     }
 
-    // explains the state of the DB to the user
+    // the songs in the music dir
+    private String[] songs;
+
+    // shows info for the user
     private Label infoLbl;
     // Displays names of all the songs found in the music dir
     private VBox songGrid;
+    // toggle button to switch between mic and input stream
+    private ToggleButton useInputStream;
     // begins listening to the microphone
     private Button goBtn;
+    // prompts the user the select input file to match
+    private Button chooseFile;
     // logs match status of input
     private Label matchLbl;
+
+    // keep the root so children can be added/removed
+    private VBox root;
     // keep stage as field for resizing purposes
     private Stage mStage;
-    // the songs in the music dir
-    private String[] songs;
-    // keep the root so children can be removed
-    private VBox root;
 
     /**
      * Creates the example GUI and sets the stage for
-     * testing purposes
+     * testing purposes.
      *
      * @param stage stage
      * @throws Exception possible exc
@@ -78,27 +91,26 @@ public class Main extends Application {
         logger.log(Level.INFO, "Launching application...");
 
         // check database connection
-        if(DBController.checkConnection()) {
+        if(DBUtils.checkConnection()) {
             // make sure there are songs in the music folder
             this.songs = AudioDecoder.scanForSongs();
             if (songs.length == 0) {
                 logger.log(Level.SEVERE, "No songs found in music dir. Exiting...");
-                Platform.exit();
-                return;
+                System.exit(-1);
             }
 
             // check if the schema exists and create it if not
-            if (!DBController.existsDB()) DBController.initDB();
+            if (!DBUtils.existsDB()) DBUtils.initDB();
 
             // get the stage for resizing
             mStage = stage;
 
             // check if there are any songs which haven't been hashed
-            int newSongs = DBController.checkForNewSongs(songs);
+            int newSongs = DBUtils.checkForNewSongs(songs);
 
             // notify the user accordingly with a varying label text
             if (newSongs != 0) {
-                infoLbl = new Label(NEW_SONGS + newSongs);
+                infoLbl = new Label("There are " + newSongs + NEW_SONGS);
             } else {
                 infoLbl = new Label(NO_NEW_SONGS);
             }
@@ -108,20 +120,32 @@ public class Main extends Application {
             infoLbl.setTextAlignment(TextAlignment.CENTER);
 
             // compute btn
-            Button computeBtn = new Button(BTN_COMPUTE);
+            Button computeBtn = new JFXButton(BTN_COMPUTE);
             computeBtn.setOnAction(this::computeSongs);
-            computeBtn.getStyleClass().add("compute-btn");
+            computeBtn.getStyleClass().add("btn");
 
             // grid for displaying all songs from music dir
             songGrid = new VBox();
             songGrid.setAlignment(Pos.CENTER);
-            songGrid.setSpacing(10);
+            songGrid.getStyleClass().add("song-grid");
 
-            // 'Go' button
-            goBtn = new Button(BTN_GO);
+            // toggle between input stream and microphone
+            useInputStream = new JFXToggleButton();
+            useInputStream.setText(USE_INPUT_STREAM);
+            useInputStream.setOnAction(this::toggleInput);
+            useInputStream.getStyleClass().add("toggle-btn");
+
+            // 'Go' button - for mic
+            goBtn = new JFXButton(BTN_GO);
             goBtn.setOnAction(this::go);
-            if (newSongs != 0) goBtn.setDisable(true); // disable if there are new songs
             goBtn.getStyleClass().add("go-btn");
+
+            // 'Choose File' button - for input stream
+            chooseFile = new JFXButton(CHOOSE_FILE);
+            chooseFile.setOnAction(this::chooseFile);
+            chooseFile.getStyleClass().add("btn");
+
+            if (newSongs != 0) enableMatching(false); // disable if there are new songs
 
             // label to display match status
             matchLbl = new Label();
@@ -130,7 +154,7 @@ public class Main extends Application {
 
             // root pane
             root = new VBox();
-            root.getChildren().addAll(infoLbl, computeBtn, songGrid, goBtn);
+            root.getChildren().addAll(infoLbl, computeBtn, useInputStream, goBtn);
             root.setAlignment(Pos.CENTER);
             root.getStyleClass().add("root-pane");
 
@@ -169,21 +193,25 @@ public class Main extends Application {
     private void computeSongs(ActionEvent e) {
         logger.log(Level.INFO, "Iterating through songs (only .wav) found... (" + songs.length + " total)");
 
-        for (String song : songs) {
-            logger.log(Level.INFO, "Decoding song " + song);
-
-            populateGrid(song);
-        }
-
         // remove the button - not needed anymore
         Button btn = (Button) e.getSource();
         root.getChildren().remove(btn);
 
+        // add the grid to contain songs as the 2nd child of the root
+        root.getChildren().add(1, songGrid);
+
+        // iterate through songs
+        for (String song : songs) {
+            logger.log(Level.INFO, "Decoding song " + song);
+
+            populateGrid(song); // calls computation on the song
+        }
+
         // update label
         infoLbl.setText(COMPUTATION_DONE);
 
-        // enable goBtn if it was disabled
-        goBtn.setDisable(false);
+        // enable matching if it was disabled
+        enableMatching(true);
 
         // resize
         mStage.sizeToScene();
@@ -204,8 +232,8 @@ public class Main extends Application {
 
         // start the computation in a new thread
         // a reference is passed so the FFT result can be assigned when computation is done
-        DecodeThread decodeThread = new DecodeThread(song);
-        decodeThread.doRun(songBtn);
+        DecodeThread decodeThread = new DecodeThread(songBtn);
+        decodeThread.start();
 
         // action handler & other
         songBtn.setOnAction(this::showSpectrogram);
@@ -217,54 +245,112 @@ public class Main extends Application {
     }
 
     /**
-     * This method begins listening to the analog audio fed in the
-     * microphone of the device that this app is running on. It will
-     * fingerprint and try to find a match for a song in the precomputed db
-     * If nothing has been found in 10 seconds, returns error.
+     * TODO: comment
      *
      * @param e btn
      */
     @SuppressWarnings("unused")
     private void go(ActionEvent e) {
-        toggleGoBtnDisable();
+        enableMatching(false);
 
-        MicController listener = new MicController();
         try {
             logger.log(Level.INFO, "Calling mic-listening algorithm...");
             // listen to mic
-            listener.listen();
+            MicListener listener = new MicListener();
+            listener.start();
         }
         catch(Exception exc) {
             // exception will be thrown if a match was found or not
             // alert user with results
             matchLbl.setText(exc.getMessage());
+            root.getChildren().add(matchLbl);
             logger.log(Level.INFO, "Listening ended.")  ;
         }
         finally {
             //re-enable button
-            toggleGoBtnDisable();
+            enableMatching(true);
         }
 
         mStage.sizeToScene();
     }
 
     /**
-     * Toggle method for enabling/disabling
-     * the go button. Example: disabled while listening, or
-     * before songs have been precomputed, as there would be nothing to
-     * compare to.
+     * TODO: comment
+     *
+     * @param e
      */
-    private void toggleGoBtnDisable() {
-        goBtn.setDisable(!goBtn.isDisabled());
-        if(goBtn.isDisabled()) {
-            goBtn.setText(LISTENING);
+    private void chooseFile(ActionEvent e) {
+        FileChooser.ExtensionFilter wavFilter = new FileChooser.ExtensionFilter("WAV Files", "*.wav");
+        FileChooser wavChooser = new FileChooser();
+        wavChooser.getExtensionFilters().add(wavFilter);
+        File input = wavChooser.showOpenDialog(mStage);
+
+        if(input != null) {
+            StreamMatcher streamMatcher = new StreamMatcher(input);
+            streamMatcher.doRun();
         } else {
-            goBtn.setText(BTN_GO);
+            Alert alertNoFile = new Alert(Alert.AlertType.ERROR);
+            alertNoFile.setTitle("Eror");
+            alertNoFile.setHeaderText(null);
+            alertNoFile.setContentText("sadssada");
+            alertNoFile.show();
         }
     }
 
     /**
-     * Method to display a spectrogram of a hashed song from song grid.
+     * Method for enabling/disabling matching choices.
+     * They can, for example be disabled in the DB is empty or when
+     * one of them is running already.
+     *
+     * @param enable true stands for enabled buttons and false for disabled
+     */
+    private void enableMatching(boolean enable) {
+        useInputStream.setDisable(!enable);
+        goBtn.setDisable(!enable);
+        chooseFile.setDisable(!enable);
+    }
+
+    /**
+     * A method to toggle between microphone input and audio stream
+     * input.
+     *
+     * @param e the toggle button
+     */
+    private void toggleInput(ActionEvent e) {
+        // get the selected property of the toggle button
+        JFXToggleButton btn = (JFXToggleButton) e.getSource();
+        boolean isSelected = btn.selectedProperty().get();
+        int childrenSize = root.getChildren().size();
+
+        logger.log(Level.INFO, "Switched input method.");
+
+        if(isSelected) {
+            // if its toggled, add the 'choseFile' button in place of the
+            // 'goBtn' (needs to be careful because there is a label that can
+            // go under the 'goBtn'
+            for(int i = childrenSize - 1; i > 0; i --) {
+                if(goBtn.equals(root.getChildren().get(i))) {
+                    root.getChildren().add(i, chooseFile);
+                    root.getChildren().remove(i+1);
+                    mStage.sizeToScene();
+                    return; // no need to loop anymore
+                }
+            }
+        } else {
+            // to the opposite of what happens if the expression evaluates
+            // to true.
+            for(int i = childrenSize - 1; i > 0; i --) {
+                if(chooseFile.equals(root.getChildren().get(i))) {
+                    root.getChildren().add(i, goBtn);
+                    root.getChildren().remove(i+1);
+                    mStage.sizeToScene();
+                }
+            }
+        }
+    }
+
+    /**
+     * Method to display a spectrogram of a song from song grid.
      * Also displays key points.
      *
      * @param e btn
@@ -276,7 +362,7 @@ public class Main extends Application {
 
         // create the spectrogram
         Scene newScene = new Scene(new Spectrogram(btn.getPoints(), song));
-        newScene.getStylesheets().add(getClass().getResource("style/estyle.css").toExternalForm());
+        newScene.getStylesheets().add(getClass().getResource("style/style.css").toExternalForm());
 
         Stage newStage = new Stage();
         newStage.setScene(newScene);

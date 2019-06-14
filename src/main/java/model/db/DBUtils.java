@@ -10,22 +10,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A controller class used to communicate with the Java app
- * and the database. It has only static methods and is therefore
+ * An utility class which contains utility-related methods for DB communication.
+ * It has only static methods and is therefore
  * thread safe. More can be found in the comments of the methods.
  *
  * @version 1.0
  * @author Martin Todorov
  */
-public class DBController {
+public class DBUtils {
     // logger
-    private static final Logger logger = Logger.getLogger(DBController.class.getName());
-
-    // database connection data - change for personal database
-    private static final String DRIVER = "com.mysql.cj.jdbc.Driver";
-    private static final String DATABASE_URL = "jdbc:mysql://localhost:3306/shazampoc";
-    private static final String USER = "root";
-    private static final String PASS = "TestDBS123#@!";
+    private static final Logger logger = Logger.getLogger(DBUtils.class.getName());
 
     /**
      * A simple method to check if the parameters for authentication work.
@@ -36,8 +30,8 @@ public class DBController {
     public static boolean checkConnection() {
         try {
             logger.log(Level.INFO, "Checking connection to database...");
-            Class.forName(DRIVER);
-            Connection connection = DriverManager.getConnection(DATABASE_URL, USER, PASS);
+            Class.forName(DBConnection.DRIVER);
+            Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
         } catch (Exception e) {
             // throwing an exception would mean unsuccessful connection
             logger.log(Level.SEVERE, "Unable to connect to database! Exiting...");
@@ -57,8 +51,8 @@ public class DBController {
 
         try {
             // connect to the database
-            Class.forName(DRIVER);
-            Connection connection = DriverManager.getConnection(DATABASE_URL, USER, PASS);
+            Class.forName(DBConnection.DRIVER);
+            Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
 
             // create statement
             Statement statement = connection.createStatement();
@@ -88,8 +82,8 @@ public class DBController {
     public static boolean existsDB() {
         try {
             // connect to database
-            Class.forName(DRIVER);
-            Connection connection = DriverManager.getConnection(DATABASE_URL, USER, PASS);
+            Class.forName(DBConnection.DRIVER);
+            Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
 
             // dummy query to check if schema is created
             Statement st = connection.createStatement();
@@ -133,8 +127,8 @@ public class DBController {
         boolean result = true;
         try {
             // connect to database
-            Class.forName(DRIVER);
-            Connection connection = DriverManager.getConnection(DATABASE_URL, USER, PASS);
+            Class.forName(DBConnection.DRIVER);
+            Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
 
             //init statement
             Statement st = connection.createStatement();
@@ -150,56 +144,5 @@ public class DBController {
         }
 
         return result;
-    }
-
-    /**
-     * A method which inserts an entry in the SONGS table in the database
-     * with a give song's name.
-     *
-     * @param song the TITLE of the new entry in the SONGS TABLE
-     */
-    public static void initSongInDB(String song) {
-        try {
-            // connect to database
-            Class.forName(DRIVER);
-            Connection connection = DriverManager.getConnection(DATABASE_URL, USER, PASS);
-
-            // create a statement
-            Statement st = connection.createStatement();
-
-            // insert the song in the database
-            st.executeUpdate("LOCK TABLES SONGS WRITE;");
-            st.executeUpdate("INSERT INTO SONGS (TITLE) VALUES ('" + song + "');");
-            st.executeUpdate("UNLOCK TABLES");
-            logger.log(Level.INFO, "Inserted song in database: " + song);
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Exception thrown while trying to insert song " + song + ": \n" + e.toString());
-        }
-    }
-
-    public static void insertHashes(String[] hashes, String songName) {
-        try {
-            Class.forName(DRIVER);
-
-            Connection connection = DriverManager.getConnection(DATABASE_URL, USER, PASS);
-
-            Statement st = connection.createStatement();
-
-            ResultSet set = st.executeQuery("SELECT ID_SONG FROM SONGS WHERE TITLE = '" + songName + "'");
-
-            int id = 0;
-            while(set.next()) {
-                id = set.getInt(1);
-            }
-
-            st.executeUpdate("LOCK TABLES HASHES WRITE;");
-            for(String hash : hashes) {
-                st.executeUpdate("INSERT INTO HASHES (HASH_, SONG_ID) VALUES ('" + hash + "'," + id +");");
-            }
-            st.executeUpdate("UNLOCK TABLES");
-
-        } catch (Exception e) {
-            System.out.println(e);
-        }
     }
 }
