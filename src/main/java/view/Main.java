@@ -2,6 +2,9 @@ package main.java.view;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXToggleButton;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ToggleButton;
+import javafx.stage.FileChooser;
 import main.java.model.threads.decoding.DecodeThread;
 import main.java.model.db.DBUtils;
 import main.java.model.fingerprint.AudioDecoder;
@@ -9,16 +12,13 @@ import main.java.model.fingerprint.AudioDecoder;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
-import javafx.event.ActionEvent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.layout.VBox;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ToggleButton;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.event.ActionEvent;
 import main.java.model.threads.matching.MicListener;
 import main.java.model.threads.matching.StreamMatcher;
 
@@ -96,8 +96,7 @@ public class Main extends Application {
             this.songs = AudioDecoder.scanForSongs();
             if (songs.length == 0) {
                 logger.log(Level.SEVERE, "No songs found in music dir. Exiting...");
-                Platform.exit();
-                return;
+                System.exit(-1);
             }
 
             // check if the schema exists and create it if not

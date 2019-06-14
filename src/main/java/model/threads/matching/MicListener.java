@@ -3,6 +3,8 @@ package main.java.model.threads.matching;
 import main.java.model.fingerprint.AudioDecoder;
 
 import javax.sound.sampled.*;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.logging.Logger;
 
 public class MicListener extends Thread{
