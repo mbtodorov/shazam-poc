@@ -4,8 +4,10 @@ import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXToggleButton;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
-import main.java.model.threads.decoding.DecodeThread;
+import main.java.model.concurrent.thread.DecodeThread;
+import main.java.model.concurrent.task.MicListener;
 import main.java.model.db.DBUtils;
 import main.java.model.fingerprint.AudioDecoder;
 
@@ -19,9 +21,10 @@ import javafx.scene.text.TextAlignment;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.event.ActionEvent;
-import main.java.model.threads.matching.MicListener;
-import main.java.model.threads.matching.StreamMatcher;
+import main.java.model.concurrent.task.StreamMatcher;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,13 +41,15 @@ import java.util.logging.Logger;
  */
 public class Main extends Application {
     // logger
-    private final static Logger logger = Logger.getLogger(Main.class.getName());
-
+    private final static Logger logger;
     // Strings used for the GUI
     private static final String WIN_TITLE, BTN_COMPUTE, BTN_GO,
                                 LISTENING, COMPUTATION_DONE, NO_NEW_SONGS,
-                                NEW_SONGS, USE_INPUT_STREAM, CHOOSE_FILE;
+                                NEW_SONGS, USE_INPUT_STREAM, CHOOSE_FILE,
+                                ALERT_ERROR, ALERT_NO_FILE, ALERT_UNSUPPORTED,
+                                COMPARING;
     static {
+        logger = Logger.getLogger(Main.class.getName());
         WIN_TITLE = "Shazam PoC";
         BTN_COMPUTE = "Compute";
         BTN_GO = "Go";
@@ -55,6 +60,10 @@ public class Main extends Application {
         COMPUTATION_DONE = "The following songs are recognizable:";
         USE_INPUT_STREAM = "Use input stream instead of mic.";
         CHOOSE_FILE = "Choose File";
+        ALERT_ERROR = "Error!";
+        ALERT_NO_FILE = "No file was selected. Try again.";
+        ALERT_UNSUPPORTED = "The selected file's audio format is not supported. Supported format:";
+        COMPARING = "Looking for a match...";
     }
 
     // the songs in the music dir
@@ -166,6 +175,7 @@ public class Main extends Application {
             stage.setScene(scene);
             stage.show();
             stage.sizeToScene();
+            stage.getIcons().add(new Image(Main.class.getResourceAsStream("./style/icon.png")));
             stage.setOnCloseRequest(e -> Platform.exit());
 
             logger.log(Level.INFO, "Successfully launched application!");
@@ -210,7 +220,7 @@ public class Main extends Application {
         // update label
         infoLbl.setText(COMPUTATION_DONE);
 
-        // enable matching if it was disabled
+        // enable task if it was disabled
         enableMatching(true);
 
         // resize
@@ -222,83 +232,124 @@ public class Main extends Application {
      * songGrid GUI element. Each song is represented with a SongBtn class,
      * which stores the result of the FFT on the raw audio file and uses it to
      * draw a spectrogram when clicked. Computation of each song will be started in a
-     * new thread. More information can be found in the thread class.
+     * new thread. More information can be found in the thread class. The grid can not
+     * display > 5 songs.
      *
      * @param song the song to be decoded
      */
     private void populateGrid(String song) {
-        // init the btn for the song
-        SongBtn songBtn = new SongBtn(song);
+        if(songGrid.getChildren().size() < 6) {
+            // init the btn for the song
+            SongBtn songBtn = new SongBtn(song);
 
-        // start the computation in a new thread
-        // a reference is passed so the FFT result can be assigned when computation is done
-        DecodeThread decodeThread = new DecodeThread(songBtn);
-        decodeThread.start();
+            // start the computation in a new thread
+            // a reference is passed so the FFT result can be assigned when computation is done
+            DecodeThread decodeThread = new DecodeThread(songBtn);
+            decodeThread.start();
 
-        // action handler & other
-        songBtn.setOnAction(this::showSpectrogram);
-        songBtn.getStyleClass().add("song-btn");
-        songBtn.setWrapText(true);
+            // action handler & other
+            songBtn.setOnAction(this::showSpectrogram);
+            songBtn.getStyleClass().add("song-btn");
+            songBtn.setWrapText(true);
 
-        // add btn to grid
-        songGrid.getChildren().add(songBtn);
+            // add btn to grid
+            songGrid.getChildren().add(songBtn);
+            if(songGrid.getChildren().size() == 5) {
+                Label andOther = new Label("...");
+                songGrid.getChildren().add(andOther);
+            }
+        } else {
+            DecodeThread decodeThread = new DecodeThread(song);
+            decodeThread.start();
+        }
     }
 
+
     /**
-     * TODO: comment
+     * TODO: comment & log
      *
      * @param e btn
      */
     @SuppressWarnings("unused")
     private void go(ActionEvent e) {
+        // disable task
         enableMatching(false);
 
+        // add the label if it isn't already
+        addMatchLabel();
+
         try {
-            logger.log(Level.INFO, "Calling mic-listening algorithm...");
-            // listen to mic
-            MicListener listener = new MicListener();
-            listener.start();
+            // create the task
+            MicListener micListener = new MicListener();
+            // update label
+            matchLbl.setText(LISTENING);
+            // when its done listening - update label and re-enable task
+            micListener.setOnSucceeded(event -> {
+                enableMatching(true);
+                matchLbl.setText(micListener.getValue());
+            });
+
+            new Thread(micListener).start();
         }
         catch(Exception exc) {
-            // exception will be thrown if a match was found or not
-            // alert user with results
-            matchLbl.setText(exc.getMessage());
-            root.getChildren().add(matchLbl);
-            logger.log(Level.INFO, "Listening ended.")  ;
+            logger.log(Level.SEVERE, "Exception thrown while listening: " + exc)  ;
         }
-        finally {
-            //re-enable button
-            enableMatching(true);
-        }
-
-        mStage.sizeToScene();
     }
 
     /**
-     * TODO: comment
+     * TODO: comment & log
      *
      * @param e
      */
     private void chooseFile(ActionEvent e) {
+        // file chooser
         FileChooser.ExtensionFilter wavFilter = new FileChooser.ExtensionFilter("WAV Files", "*.wav");
         FileChooser wavChooser = new FileChooser();
         wavChooser.getExtensionFilters().add(wavFilter);
         File input = wavChooser.showOpenDialog(mStage);
 
+        // input is null if cancel was clicked
         if(input != null) {
-            StreamMatcher streamMatcher = new StreamMatcher(input);
-            streamMatcher.doRun();
-        } else {
+            // check if the format is supported
+            boolean isFormatSupported = AudioDecoder.checkFormat(input);
+            if(isFormatSupported) {
+                // add a match status label & disable matching unitl done
+                addMatchLabel();
+                enableMatching(false);
+                matchLbl.setText(COMPARING);
+
+                try {
+                    // create the task and start it, passing the input file
+                    StreamMatcher streamMatcher = new StreamMatcher(AudioSystem.getAudioInputStream(input));
+                    // when done, enable matching and show result on status label
+                    streamMatcher.setOnSucceeded(event -> {
+                        enableMatching(true);
+                        matchLbl.setText(streamMatcher.getValue());
+                    });
+
+                    new Thread(streamMatcher).start();
+                } catch (Exception xcc) {
+                    logger.log(Level.SEVERE, "Exception thrown while matching stream " + e);
+                }
+            } else { // audio file of unsupported format - alert
+                AudioFormat format = AudioDecoder.getSupportedFormat();
+                Alert alertUnsupported = new Alert(Alert.AlertType.ERROR);
+                alertUnsupported.setTitle(ALERT_ERROR);
+                alertUnsupported.setHeaderText(null);
+                alertUnsupported.setContentText(ALERT_UNSUPPORTED + format.toString());
+                alertUnsupported.show();
+            }
+        } else { // cancel was click - alert
             Alert alertNoFile = new Alert(Alert.AlertType.ERROR);
-            alertNoFile.setTitle("Eror");
+            alertNoFile.setTitle(ALERT_ERROR);
             alertNoFile.setHeaderText(null);
-            alertNoFile.setContentText("sadssada");
+            alertNoFile.setContentText(ALERT_NO_FILE);
             alertNoFile.show();
         }
     }
 
     /**
-     * Method for enabling/disabling matching choices.
+     * Method for enabling/disabling match choices.
      * They can, for example be disabled in the DB is empty or when
      * one of them is running already.
      *
@@ -320,33 +371,21 @@ public class Main extends Application {
         // get the selected property of the toggle button
         JFXToggleButton btn = (JFXToggleButton) e.getSource();
         boolean isSelected = btn.selectedProperty().get();
-        int childrenSize = root.getChildren().size();
+
+        root.getChildren().remove(matchLbl);
+
+        if(isSelected) {
+            root.getChildren().remove(goBtn);
+            root.getChildren().add(chooseFile);
+        } else {
+            root.getChildren().remove(chooseFile);
+            root.getChildren().add(goBtn);
+        }
 
         logger.log(Level.INFO, "Switched input method.");
 
-        if(isSelected) {
-            // if its toggled, add the 'choseFile' button in place of the
-            // 'goBtn' (needs to be careful because there is a label that can
-            // go under the 'goBtn'
-            for(int i = childrenSize - 1; i > 0; i --) {
-                if(goBtn.equals(root.getChildren().get(i))) {
-                    root.getChildren().add(i, chooseFile);
-                    root.getChildren().remove(i+1);
-                    mStage.sizeToScene();
-                    return; // no need to loop anymore
-                }
-            }
-        } else {
-            // to the opposite of what happens if the expression evaluates
-            // to true.
-            for(int i = childrenSize - 1; i > 0; i --) {
-                if(chooseFile.equals(root.getChildren().get(i))) {
-                    root.getChildren().add(i, goBtn);
-                    root.getChildren().remove(i+1);
-                    mStage.sizeToScene();
-                }
-            }
-        }
+        // resize
+        mStage.sizeToScene();
     }
 
     /**
@@ -367,6 +406,18 @@ public class Main extends Application {
         Stage newStage = new Stage();
         newStage.setScene(newScene);
         newStage.setTitle(song);
+        newStage.getIcons().add(new Image(Main.class.getResourceAsStream("./style/icon.png")));
         newStage.show();
+    }
+
+    /**
+     * A method to add the match status label if it isn't added already.
+     */
+    private void addMatchLabel() {
+        if(!root.getChildren().get(root.getChildren().size() - 1).equals(matchLbl)) {
+            root.getChildren().add(matchLbl);
+        }
+
+        mStage.sizeToScene();
     }
 }

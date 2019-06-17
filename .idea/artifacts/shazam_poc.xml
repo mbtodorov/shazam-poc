@@ -1,0 +1,21 @@
+<component name="ArtifactManager">
+  <artifact type="javafx" name="shazam-poc">
+    <output-path>$PROJECT_DIR$/out/artifacts/shazam_poc</output-path>
+    <properties id="javafx-properties">
+      <options>
+        <option name="appClass" value="Main" />
+        <option name="description" value="" />
+        <option name="htmlPlaceholderId" value="" />
+        <option name="nativeBundle" value="all" />
+        <option name="title" value="Shazam" />
+        <option name="vendor" value="" />
+        <option name="version" value="0.5" />
+      </options>
+    </properties>
+    <root id="root">
+      <element id="archive" name="shazam_poc.jar">
+        <element id="module-output" name="shazam-poc" />
+      </element>
+    </root>
+  </artifact>
+</component>

@@ -5,6 +5,8 @@
     src: url("Roboto-Bold.ttf");
 }
 
+
+
 /* ----------- COLORS ----------- */
 
 *{
@@ -24,7 +26,7 @@
 
 .root-pane {
     -fx-padding: 30 0 30 0;
-    -fx-pref-width: 400;
+    -fx-pref-width: 480;
     -fx-spacing: 20;
 }
 
@@ -105,4 +107,6 @@
 
 .spectrogram-label {
     -fx-padding: 20 0 20 0;
+    -fx-font-weight: bold;
+    -fx-font-size: 14pt;
 }

@@ -32,6 +32,7 @@ public class AudioFingerprint {
      * @return a double[][] containing 0 for irrelevant points and
      * original values for all relevant points
      */
+    @SuppressWarnings("Duplicates")
     public static KeyPoint[] extractKeyPoints(double[][] in) {
         logger.log(Level.INFO, "Begin extracting key points from FFT result...");
         // TODO: implement this better
@@ -40,31 +41,32 @@ public class AudioFingerprint {
         double average;
         ArrayList<KeyPoint> keyPointArrayList = new ArrayList<>();
         // iterate the first dimension of the array
+
         for(int i = 0; i < in.length; i ++) {
 
             // iterate through the 6 logarithmic bands containing bins
             // from: 0-10, 10-20, 20-40, 40-80, etc..
             for(int j = 0; j < 6; j ++) {
                 if(j == 0) { // edge case
-                    sum += findMax(Arrays.copyOfRange(in[i], 0, 10));
+                    sum += findMax(Arrays.copyOfRange(in[i], 502, 512));
                 } else {
                     // logarithmically allocate bands
                     int start = (int) (5*Math.pow(2,j));
                     int end = (int) (5*Math.pow(2, j+1));
                     // edge case
-                    if(end == 320) end = in[i].length - 1;
-                    sum += findMax(Arrays.copyOfRange(in[i], start, end));
+                    if(end == 320) end = in[i].length ;
+                    sum += findMax(Arrays.copyOfRange(in[i], 512 - end, 512 - start));
                 }
             }
 
-            average = sum/6.5; // TODO: mess around with coefficient - the lower the less points
+            average = sum/6; // TODO: mess around with coefficient - the lower the less points
             sum = 0;
 
             // iterate and allocate values which pass over the average
             // + a constant value to eliminate any points which are considered due
             // to inherently low bands
             for(int j = in[0].length - 1; j >= 0; j --) {
-                if(in[i][j] > average + 0.27) {
+                if(in[i][j] > average + 0.065) {
                     keyPointArrayList.add(new KeyPoint(i, j));
                 }
             }
@@ -72,7 +74,7 @@ public class AudioFingerprint {
 
         KeyPoint[] out = keyPointArrayList.toArray(new KeyPoint[0]);
 
-        logger.log(Level.INFO, "Done extracting keypoints from FFT result!");
+        logger.log(Level.INFO, "Done extracting keypoints from FFT result! (" + out.length + " total)");
         return out;
     }
 
@@ -84,7 +86,7 @@ public class AudioFingerprint {
      * @return the max value from the double[]
      */
     private static double findMax(double[] in) {
-        double max = 0.0;
+        double max = 0.18;
         for (double v : in) {
             if (v > max) max = v;
         }
@@ -119,6 +121,36 @@ public class AudioFingerprint {
         logger.log(Level.INFO, "Begin hashing key points (" + keyPtsLen + ") into  " + hashSize + " hashes");
 
         for(int i = 0; i < keyPtsLen - (zoneSize + 1); i += (zoneSize + 1)) {
+            KeyPoint[] zone = Arrays.copyOfRange(points, i, zoneSize + 1 +i);
+            TargetZone tz = new MyTargetZone(zone);
+            List<String> hashes = Arrays.asList(tz.getHashes());
+            resultList.addAll(hashes);
+        }
+
+        logger.log(Level.INFO, "Done hashing points (" + keyPtsLen + ") into  " + resultList.size() + " hashes!");
+
+        return resultList.toArray(new String[0]);
+    }
+
+    /**
+     * TODO: comment&log
+     * @param points
+     * @return
+     */
+    public static String[] hashAll(KeyPoint[] points) {
+        // hash code parameters
+        int zoneSize = MyTargetZone.ZONE_SIZE;
+        int numPts = MyTargetZone.NUM_POINTS;
+        int keyPtsLen = points.length;
+
+        reverseFrequencies(points);
+
+        int hashSize = keyPtsLen / (zoneSize + 1) * numPts;
+        ArrayList<String> resultList = new ArrayList<>();
+
+        logger.log(Level.INFO, "Begin hashing key points (" + keyPtsLen + ") into  " + hashSize + " hashes");
+
+        for(int i = 0; i < keyPtsLen - (zoneSize + 1); i ++) {
             KeyPoint[] zone = Arrays.copyOfRange(points, i, zoneSize + 1 +i);
             TargetZone tz = new MyTargetZone(zone);
             List<String> hashes = Arrays.asList(tz.getHashes());

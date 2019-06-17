@@ -17,15 +17,13 @@ import javax.sound.sampled.AudioSystem;
 
 /**
  * This class is the main engine class. It provides all algorithms required
- * for wav manipulation. It is a thread-safe class because all of its methods are
+ * for audio manipulation. It is a thread-safe class because all of its methods are
  * static.
  *
  * CAUTION: All of the methods are not very dynamic; that is, the order of which
  * they are executed is important. The WavController class executes them in a proper order
  * and thus produces best results. Please check for reference as some methods expect
  * a very specific format for their input.
- *
- * It looks for .wav files in {root dir}/music/*.wav
  *
  * @version 1.0
  * @author Martin Todorov
@@ -35,39 +33,24 @@ public class AudioUtils {
     private final static Logger logger = Logger.getLogger(AudioUtils.class.getName());
 
     /**
-     * A method to apply a low-pass filter to a song. The filter aims to remove all frequencies
+     * A method to apply a low-pass filter to a stream. The filter aims to remove all frequencies
      * > 5 kHz. It uses the dps-collections library.
      *
-     * @param song the song to which the low-pass filter should be applied
+     * @param ais the input audio stream
      * @return An audio input stream which contains the song with a filter applied on it
-     * @throws Exception filter-specific exception
      */
-    static AudioInputStream lowPassFilterWav(File song) throws Exception {
+    static AudioInputStream lowPassFilterAIS(AudioInputStream ais) {
         FilterPassType filterPassType = FilterPassType.lowpass;
         FilterCharacteristicsType filterCharacteristicsType = FilterCharacteristicsType.butterworth;
         int filterOrder = 4;
         double ripple = 0;
         double fcf1 = 4000;
         double fcf2 = 0;
-        logger.log(Level.INFO, "Applying low-pass filter to song...");
-        AudioInputStream inputStream = AudioSystem.getAudioInputStream(song);
-        AudioInputStream result = IirFilterAudioInputStreamFisher.getAudioInputStream(inputStream, filterPassType,
+        logger.log(Level.INFO, "Applying low-pass filter to stream");
+        AudioInputStream result = IirFilterAudioInputStreamFisher.getAudioInputStream(ais, filterPassType,
                 filterCharacteristicsType, filterOrder, ripple, fcf1, fcf2);
-
-        logger.log(Level.INFO, "Successfully applied low-pass filter to song!");
+        logger.log(Level.INFO, "Successfully applied low-pass filter to stream!");
         return result;
-    }
-
-    static AudioInputStream lowPassFilterAIS(AudioInputStream ais) throws Exception {
-        FilterPassType filterPassType = FilterPassType.lowpass;
-        FilterCharacteristicsType filterCharacteristicsType = FilterCharacteristicsType.butterworth;
-        int filterOrder = 4;
-        double ripple = 0;
-        double fcf1 = 4000;
-        double fcf2 = 0;
-        logger.log(Level.INFO, "Applying low pass filter to mic...");
-        return IirFilterAudioInputStreamFisher.getAudioInputStream(ais, filterPassType,
-                filterCharacteristicsType, filterOrder, ripple, fcf1, fcf2);
     }
 
     /**
@@ -78,29 +61,29 @@ public class AudioUtils {
      * @return the raw mono audio
      */
     static byte[] convertToMono(byte[] in) {
-        logger.log(Level.INFO, "Converting stereo song to mono...");
+        logger.log(Level.INFO, "Converting stereo to mono...");
 
         byte[] result = doubleBitWiseCompression(in);
 
-        logger.log(Level.INFO, "Successfully converted song to mono!");
+        logger.log(Level.INFO, "Successfully converted to mono!");
         return result;
     }
 
     /**
      * A method to down-sample a 44.1 kHz byte[] to 11.025 kHz
      * takes average of groups by 4. Loses some clarity but is good enough
-     * for matching.
+     * for task.
      *
      * @param original 44.1 kHz byte[]
      * @return 11.025 kHz byte[]
      */
     static byte[] downSample(byte[] original) {
-        logger.log(Level.INFO, "Down-sampling song...");
+        logger.log(Level.INFO, "Down-sampling...");
 
         // compress once to down-sample to 22050 and again to down-sample to 11025
         byte[] result = doubleBitWiseCompression(doubleBitWiseCompression(original));
 
-        logger.log(Level.INFO, "Song down-sampled to 11025 kHz.");
+        logger.log(Level.INFO, "Down-sampled to 11025 kHz.");
         return result;
     }
 
@@ -131,7 +114,7 @@ public class AudioUtils {
      * @return a double[] representation of the input
      */
     static double[] byteToDoubleArr(byte[] in) {
-        logger.log(Level.INFO, "Converting byte[] song to double[]...");
+        logger.log(Level.INFO, "Converting byte[] to double[]...");
 
         int new_length = in.length/2;
         double[] out = new double[new_length];

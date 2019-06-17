@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -14,7 +15,7 @@ import java.util.logging.Logger;
  * @version 1.0
  * @author Martin Todorov
  */
-public class DBModifier {
+public class DBFingerprint {
     // logger
     private static final Logger logger = Logger.getLogger(DBUtils.class.getName());
 
@@ -71,5 +72,60 @@ public class DBModifier {
         } catch (Exception e) {
             System.out.println(e);
         }
+    }
+
+    public static String lookForMatches(String[] hashes) {
+        HashMap<Integer, Integer> map = new HashMap<>();
+
+        synchronized (DBFingerprint.class) {
+            try {
+                // connect to database
+                Class.forName(DBConnection.DRIVER);
+                Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
+
+                // create a statement
+                Statement st = connection.createStatement();
+                int id;
+
+                for (String hash : hashes) {
+                    ResultSet set = st.executeQuery("SELECT SONG_ID FROM HASHES WHERE HASH_ = '" + hash + "';");
+                    while (set.next()) {
+                        id = set.getInt(1);
+                        System.out.print(id + " ");
+                        if (map.containsKey(id)) {
+                            map.put(id, map.get(id) + 1);
+                        } else {
+                            map.put(id, 1);
+                        }
+                    }
+                }
+
+                // find the most matched song
+                int max = 0;
+                int bestMatchId = 0;
+                for (int k : map.keySet()) {
+                    if (map.get(k) > max) {
+                        max = map.get(k);
+                        bestMatchId = k;
+                    }
+                }
+
+                System.out.println(map.get(1));
+                // get its name
+                String result = "";
+                if (bestMatchId != 0 && map.get(bestMatchId) > hashes.length/500) {
+                    ResultSet set = st.executeQuery("SELECT TITLE FROM SONGS WHERE ID_SONG = " + bestMatchId + ";");
+                    while (set.next()) {
+                        result = set.getString(1);
+                    }
+                }
+
+                if (!result.equals("")) return result;
+
+            } catch (Exception e) {
+                System.out.println(e);
+            }
+        }
+        return null;
     }
 }
