@@ -2,7 +2,7 @@ package main.java.view;
 
 import main.java.model.concurrent.thread.DecodeThread;
 import main.java.model.concurrent.task.MicListener;
-import main.java.model.concurrent.task.StreamMatcher;
+import main.java.model.concurrent.task.FileMatcher;
 import main.java.model.db.DBUtils;
 import main.java.model.engine.AudioDecoder;
 
@@ -94,11 +94,9 @@ public class Main extends Application {
      * testing purposes.
      *
      * @param stage stage
-     * @throws Exception possible exc
      */
-    @SuppressWarnings("RedundantThrows")
     @Override
-    public void start(Stage stage) throws Exception{
+    public void start(Stage stage) {
         logger.log(Level.INFO, "Launching application...");
 
         // check database connection
@@ -241,25 +239,33 @@ public class Main extends Application {
      */
     private void populateGrid(String song) {
 
-        // init the btn for the song
-        SongBtn songBtn = new SongBtn(song);
-
-        // start the computation in a new thread
-        // a reference is passed so the FFT result can be assigned when computation is done
-        DecodeThread decodeThread = new DecodeThread(songBtn);
-        decodeThread.start();
-
-        // action handler & other
-        songBtn.setOnAction(this::showSpectrogram);
-        songBtn.getStyleClass().add("song-btn");
-        songBtn.setWrapText(true);
-
-        // add btn to grid
         if(songGrid.getChildren().size() < 6) {
+            // init the btn for the song
+            SongBtn songBtn = new SongBtn(song);
+
+            // start the computation in a new thread
+            // a reference is passed so the FFT result can be assigned when computation is done
+            DecodeThread decodeThread = new DecodeThread(songBtn);
+            decodeThread.start();
+
+            // action handler & other
+            songBtn.setOnAction(this::showSpectrogram);
+            songBtn.getStyleClass().add("song-btn");
+            songBtn.setWrapText(true);
+
+            // add btn to grid
             songGrid.getChildren().add(songBtn);
+
+            // add a label indicating that there are more songs
+            // but they can't be displayed
             if(songGrid.getChildren().size() == 5) {
                 songGrid.getChildren().add(new Label("..."));
             }
+        } else {
+            // decode the song, without displaying it, in case it hasn't
+            // been fingerprinted in the DB yet.
+            DecodeThread decodeThread = new DecodeThread(song);
+            decodeThread.start();
         }
     }
 
@@ -325,15 +331,15 @@ public class Main extends Application {
 
                 try {
                     // create the task and start it, passing the input file
-                    StreamMatcher streamMatcher = new StreamMatcher(AudioSystem.getAudioInputStream(input));
+                    FileMatcher fileMatcher = new FileMatcher(AudioSystem.getAudioInputStream(input));
                     // when done, enable matching and show result on status label
-                    streamMatcher.setOnSucceeded(event -> {
+                    fileMatcher.setOnSucceeded(event -> {
                         enableMatching(true);
-                        matchLbl.setText(streamMatcher.getValue());
+                        matchLbl.setText(fileMatcher.getValue());
                     });
 
                     // begin
-                    new Thread(streamMatcher).start();
+                    new Thread(fileMatcher).start();
                 } catch (Exception xcc) {
                     logger.log(Level.SEVERE, "Exception thrown while matching stream " + e);
                 }

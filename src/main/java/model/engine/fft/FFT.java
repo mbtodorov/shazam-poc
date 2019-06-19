@@ -1,6 +1,10 @@
 package main.java.model.engine.fft;
 
 /**
+ * DISCLAIMER: This code is not mine, the author is
+ * mentioned below. The source of this file is:
+ * https://stackoverflow.com/questions/3287518/reliable-and-fast-fft-in-java
+ *
  * @author Orlando Selenu
  *
  */

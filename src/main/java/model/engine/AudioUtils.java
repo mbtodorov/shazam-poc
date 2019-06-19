@@ -1,8 +1,5 @@
 package main.java.model.engine;
 
-import biz.source_code.dsp.filter.FilterCharacteristicsType;
-import biz.source_code.dsp.filter.FilterPassType;
-import biz.source_code.dsp.sound.IirFilterAudioInputStreamFisher;
 import main.java.model.engine.fft.FFT;
 
 import java.io.ByteArrayInputStream;
@@ -14,6 +11,11 @@ import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+
+// libs for low-pass filter
+import biz.source_code.dsp.filter.FilterCharacteristicsType;
+import biz.source_code.dsp.filter.FilterPassType;
+import biz.source_code.dsp.sound.IirFilterAudioInputStreamFisher;
 
 /**
  * This class is the main engine class. It provides all algorithms required
@@ -36,8 +38,10 @@ public class AudioUtils {
      * A method to apply a low-pass filter to a stream. The filter aims to remove all frequencies
      * > 5 kHz. It uses the dps-collections library.
      *
+     * TODO: there is some clipping from the filter
+     *
      * @param ais the input audio stream
-     * @return An audio input stream which contains the song with a filter applied on it
+     * @return An audio input stream which contains the song with a filter applied to it
      */
     static AudioInputStream lowPassFilterAIS(AudioInputStream ais) {
         FilterPassType filterPassType = FilterPassType.lowpass;
@@ -135,7 +139,6 @@ public class AudioUtils {
      * @return the output point data
      */
     static double[][] applyFFT(double[] audio) {
-        // TODO: improve FFT computation time
         int length = audio.length;
 
         //initialize parameters for FFT

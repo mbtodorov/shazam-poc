@@ -9,7 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A class which sends insert and query statements to the database
+ * A class which takes care of all fingerprint-related DB statements
  * All of the methods are static and it is thread-safe.
  *
  * @version 1.0
@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  */
 public class DBFingerprint {
     // logger
-    private static final Logger logger = Logger.getLogger(DBUtils.class.getName());
+    private static final Logger logger = Logger.getLogger(DBFingerprint.class.getName());
 
     /**
      * A method which inserts an entry in the SONGS table in the database
@@ -44,7 +44,13 @@ public class DBFingerprint {
         }
     }
 
-    public static void insertHashes(String[] hashes, String songName) {
+    /**
+     * TODO: this
+     *
+     * @param hashes
+     * @param songName
+     */
+    public static void insertFingerprint(String[] hashes, String songName) {
         try {
             // connect to database
             Class.forName(DBConnection.DRIVER);
@@ -74,6 +80,12 @@ public class DBFingerprint {
         }
     }
 
+    /**
+     * TODO: this
+     *
+     * @param hashes
+     * @return
+     */
     public static String lookForMatches(String[] hashes) {
         HashMap<Integer, Integer> map = new HashMap<>();
 

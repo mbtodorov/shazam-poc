@@ -4,12 +4,8 @@ import main.java.model.db.DBFingerprint;
 import main.java.model.db.DBUtils;
 import main.java.model.engine.datastructures.KeyPoint;
 
-import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,11 +52,11 @@ public class AudioDecoder {
      * Takes a file (wav) and undergoes a series of conversions:
      * low-pass filter for frequencies > 5000 hZ; down-sample to 11025 hZ;
      * convert to mono; hamming window function with size 1024; fft. Finally
-     * it extracts a engine and  populates a database if the file is not
+     * it extracts a fingerprint and  populates a database if the file is not
      * in the database already.
      *
-     * @param songName the file to decodeWav
-     * @return 2D spectrogram points representation
+     * @param songName the file to decode
+     * @return FFT result for drawing spectrogram
      */
     public static double[][] decodeWav(String songName) {
         long start = System.currentTimeMillis(); // used for logging speed of algorithm
@@ -73,14 +69,12 @@ public class AudioDecoder {
 
         // Step 1: apply low pass filter to wav and convert to byte array
 
-        byte[] audioStereoFiltered = null;
+        byte[] audioFiltered = null;
         try {
-            // TODO: There is some clipping from the filter
             // Audio input stream automatically filters the header bytes
             AudioInputStream ais = AudioUtils.lowPassFilterAIS(AudioSystem.getAudioInputStream(song));
 
-            audioStereoFiltered = new byte[ais.available()];
-            audioStereoFiltered = ais.readAllBytes();
+            audioFiltered = ais.readAllBytes();
 
             ais.close();
         }
@@ -91,7 +85,7 @@ public class AudioDecoder {
 
         // Step 2 convert raw stereo to raw mono audio
 
-        byte[] audioMonoFiltered = AudioUtils.convertToMono(audioStereoFiltered);
+        byte[] audioMonoFiltered = AudioUtils.convertToMono(audioFiltered);
 
         // Step 3: down sample audio file to 44.1/4 = 11 025 Hz
 
@@ -116,7 +110,7 @@ public class AudioDecoder {
 
             // Step 2: get the fingerprints from the song
 
-            String[] hashes = AudioFingerprint.hash(keyPoints);
+            String[] hashes = AudioFingerprint.hash(keyPoints, false);
 
             synchronized (AudioDecoder.class) { // concurrent can't write to DB at the same time
                 // Step 3: init an entry for the song in the database
@@ -125,7 +119,7 @@ public class AudioDecoder {
 
                 // Step 4: insert the hashes in the DB
 
-                DBFingerprint.insertHashes(hashes, songName);
+                DBFingerprint.insertFingerprint(hashes, songName);
             }
         }
 
@@ -158,7 +152,6 @@ public class AudioDecoder {
         // Step 1 : apply low-pass filter to the stream and convert to byte array
 
         try {
-            // TODO: There is some clipping from the filter
             // Audio input stream automatically filters the header bytes
             AudioInputStream ais = AudioUtils.lowPassFilterAIS(in);
 
@@ -195,9 +188,6 @@ public class AudioDecoder {
         // Step 3: convert the byte[] raw audio to double[] raw audio
 
         assert decodedAudio != null;
-
-        //AudioUtils.writeWavToSystem(decodedAudio, "mic" + Thread.currentThread().getName());
-
         double[] finalAudio = AudioUtils.byteToDoubleArr(decodedAudio);
 
         // Step 4: apply FFT to the double[] to get the point data needed for extracting key points
@@ -210,29 +200,29 @@ public class AudioDecoder {
 
         // Step 6: Extract ALL possible hashes from the keypoints
 
-        String[] hashes = AudioFingerprint.hashAll(keyPoints);
+        String[] hashes = AudioFingerprint.hash(keyPoints, true);
 
         // Step 7: look for matching fingerprints in DB.
 
         String result = DBFingerprint.lookForMatches(hashes);
 
-        /*
+        /* Uncomment to test
         try {
             // retrieve image
             BufferedImage bi = drawSpectrogram(FFTResults);
-            File outputfile = new File("spectrogram" + Thread.currentThread().getName() + ".png");
-            ImageIO.write(bi, "png", outputfile);
+            File outputFile = new File("spectrogram" + Thread.currentThread().getName() + ".png");
+            ImageIO.write(bi, "png", outputFile);
 
             BufferedImage kp = drawKeyPoints(FFTResults);
             File out = new File("keypoints" + Thread.currentThread().getName() + ".png");
             ImageIO.write(kp, "png", out);
 
+            AudioUtils.writeWavToSystem(decodedAudio, "mic" + Thread.currentThread().getName())
+
         } catch (IOException e) {
 
-        }
+        } */
 
-
-         */
         // log time taken
         long end = System.currentTimeMillis();
         logger.log(Level.INFO, "Time taken to decode input stream: " + (end-start) + "ms");
@@ -275,7 +265,7 @@ public class AudioDecoder {
                 frameRate, false);
     }
 
-    /*
+    /* Uncomment to test
     private static BufferedImage drawSpectrogram(double[][] points) {
 
         BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);

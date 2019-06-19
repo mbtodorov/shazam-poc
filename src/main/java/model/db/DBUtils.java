@@ -29,6 +29,7 @@ public class DBUtils {
         try {
             logger.log(Level.INFO, "Checking connection to database...");
             Class.forName(DBConnection.DRIVER);
+            //noinspection unused
             Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
         } catch (Exception e) {
             // throwing an exception would mean unsuccessful connection
@@ -55,13 +56,12 @@ public class DBUtils {
             // create statement
             Statement statement = connection.createStatement();
 
-            // create the schema
-            statement.executeUpdate("SET FOREIGN_KEY_CHECKS=0;");
-            statement.executeUpdate("DROP TABLE IF EXISTS SONGS, HASHES;");
-            statement.executeUpdate("SET FOREIGN_KEY_CHECKS=1;");
-            statement.executeUpdate("CREATE TABLE SONGS (ID_SONG INT(11) NOT NULL AUTO_INCREMENT,TITLE VARCHAR(60) NOT NULL, PRIMARY KEY (ID_SONG));");
-            statement.executeUpdate("CREATE TABLE HASHES (HASH_ VARCHAR(30) NOT NULL, SONG_ID INT(11) NOT NULL);");
-            statement.executeUpdate("ALTER TABLE HASHES ADD CONSTRAINT VALID FOREIGN KEY (SONG_ID) REFERENCES SONGS (ID_SONG) ON DELETE CASCADE ON UPDATE CASCADE; ");
+            statement.executeUpdate("CREATE TABLE SONGS (ID_SONG INT(11) NOT NULL " +
+                    "AUTO_INCREMENT,TITLE VARCHAR(60) NOT NULL, PRIMARY KEY (ID_SONG));");
+            statement.executeUpdate("CREATE TABLE HASHES (HASH_ VARCHAR(30) NOT NULL, " +
+                    "SONG_ID INT(11) NOT NULL);");
+            statement.executeUpdate("ALTER TABLE HASHES ADD CONSTRAINT VALID FOREIGN KEY (SONG_ID) " +
+                    "REFERENCES SONGS (ID_SONG) ON DELETE CASCADE ON UPDATE CASCADE; ");
 
             statement.close();
         } catch (Exception e) {
@@ -85,6 +85,7 @@ public class DBUtils {
 
             // dummy query to check if schema is created
             Statement st = connection.createStatement();
+            //noinspection unused
             ResultSet set = st.executeQuery("SELECT * FROM SONGS;");
 
         } catch (Exception e) {
@@ -121,6 +122,7 @@ public class DBUtils {
      * @param song the song to be checked
      * @return true if the song is in the database and false if it isn't
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean isSongInDB(String song) {
         boolean result = true;
         try {

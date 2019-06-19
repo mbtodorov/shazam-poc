@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 public class AudioFingerprint {
     // logger
-    private final static Logger logger = Logger.getLogger(AudioUtils.class.getName());
+    private final static Logger logger = Logger.getLogger(AudioFingerprint.class.getName());
 
     /**
      * A method to extract the keypoints from a double[][].
@@ -97,20 +97,13 @@ public class AudioFingerprint {
     }
 
     /**
-     * A method to hash the keypoints from the FFT result
-     * It returns an array of 64 bit longs containing all hashes
-     * 9bits - frequency of anchor points
-     * 9bits - frequency of point 1
-     * 9bits - frequency of point 2
-     * 9bits - frequency of point 3
-     * 9bits - delta time between point 1 and anchor
-     * 9bits - delta time between point 2 and anchor
-     * 9bits - delta time between point 3 and anchor
-     * total of 63 bits + 0 in the beginning
+     * A method to extract fingerprints from
+     * the keypoints array.
+     *
      * @param points the keypoints from the FFT result
-     * @return a long array containing all generated hashes
+     * @return the fingerprints
      */
-    static String[] hash(KeyPoint[] points) {
+    static String[] hash(KeyPoint[] points, boolean hashAll) {
         // hash code parameters
         int zoneSize = MyTargetZone.ZONE_SIZE;
         int numPts = MyTargetZone.NUM_POINTS;
@@ -119,9 +112,13 @@ public class AudioFingerprint {
         int hashSize = keyPtsLen / (zoneSize + 1) * numPts;
         ArrayList<String> resultList = new ArrayList<>();
 
+        // TODO: fix hash size
         logger.log(Level.INFO, "Begin hashing key points (" + keyPtsLen + ") into  " + hashSize + " hashes");
 
-        for(int i = 0; i < keyPtsLen - (zoneSize + 1); i += (zoneSize + 1)) {
+        int increment = 1;
+        if(!hashAll) increment += zoneSize;
+
+        for(int i = 0; i < keyPtsLen - (zoneSize + 1); i += increment) {
             KeyPoint[] zone = Arrays.copyOfRange(points, i, zoneSize + 1 +i);
             TargetZone tz = new MyTargetZone(zone);
             List<String> hashes = Arrays.asList(tz.getHashes());
@@ -132,35 +129,4 @@ public class AudioFingerprint {
 
         return resultList.toArray(new String[0]);
     }
-
-    /**
-     * TODO: comment&log
-     * @param points
-     * @return
-     */
-    public static String[] hashAll(KeyPoint[] points) {
-        // hash code parameters
-        int zoneSize = MyTargetZone.ZONE_SIZE;
-        int numPts = MyTargetZone.NUM_POINTS;
-        int keyPtsLen = points.length;
-
-
-        int hashSize = keyPtsLen / (zoneSize + 1) * numPts;
-        ArrayList<String> resultList = new ArrayList<>();
-
-        logger.log(Level.INFO, "Begin hashing key points (" + keyPtsLen + ") into  " + hashSize + " hashes");
-
-        for(int i = 0; i < keyPtsLen - (zoneSize + 1); i ++) {
-            KeyPoint[] zone = Arrays.copyOfRange(points, i, zoneSize + 1 +i);
-            TargetZone tz = new MyTargetZone(zone);
-            List<String> hashes = Arrays.asList(tz.getHashes());
-            resultList.addAll(hashes);
-        }
-
-        logger.log(Level.INFO, "Done hashing points (" + keyPtsLen + ") into  " + resultList.size() + " hashes!");
-
-        return resultList.toArray(new String[0]);
-    }
-
-
 }

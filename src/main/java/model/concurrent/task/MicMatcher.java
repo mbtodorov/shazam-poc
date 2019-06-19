@@ -1,9 +1,8 @@
 package main.java.model.concurrent.task;
 
-import javafx.concurrent.Task;
 import main.java.model.engine.AudioDecoder;
-import main.java.model.engine.AudioUtils;
 
+import javafx.concurrent.Task;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import java.io.ByteArrayInputStream;
@@ -21,15 +20,15 @@ import java.util.logging.Logger;
  */
 public class MicMatcher extends Task<String> {
     // logger
-    private final static Logger logger = Logger.getLogger(AudioDecoder.class.getName());
+    private final static Logger logger = Logger.getLogger(MicMatcher.class.getName());
 
     // the byte array which contains the mic extract
     private byte[] raw;
     // the microphone format used
     private AudioFormat micFormat;
-
+    // the beginning of the extract (second) - for logging
     private int beginning;
-
+    // the length of the extract (seconds) - for logging
     private int extractLength;
 
     /**
@@ -37,6 +36,8 @@ public class MicMatcher extends Task<String> {
      *
      * @param raw the mic data
      * @param micFormat the mic format used
+     * @param beginning = the beginning of the extract (second)
+     * @param extractLength = the length of the extract (seconds)
      */
     MicMatcher(byte[] raw, AudioFormat micFormat, int beginning, int extractLength) {
         this.raw = raw;
@@ -55,15 +56,17 @@ public class MicMatcher extends Task<String> {
      */
     @Override
     public String call() {
-        // convert raw byte array to input stream
+        // convert raw byte array to audio input stream
         ByteArrayInputStream bais = new ByteArrayInputStream(raw);
         AudioInputStream stream = new AudioInputStream(bais, micFormat, raw.length);
 
-        logger.log(Level.INFO, "Begin decoding and matching microphone extract from " + beginning + "s to " + (beginning + extractLength) + "s...");
+        logger.log(Level.INFO, "Begin decoding and matching microphone extract from " +
+                beginning + "s to " + (beginning + extractLength) + "s...");
 
         String result = AudioDecoder.decodeStreamAndMatch(stream, true);
 
-        logger.log(Level.INFO, "Done decoding and matching microphone extract from " + beginning + "s to " + (beginning + extractLength) + "s!");
+        logger.log(Level.INFO, "Done decoding and matching microphone extract from " +
+                beginning + "s to " + (beginning + extractLength) + "s!");
 
         return result;
     }

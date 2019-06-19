@@ -2,6 +2,9 @@ package main.java.model.engine.datastructures;
 
 import java.util.Arrays;
 
+/**
+ * TODO: this class
+ */
 public class MyTargetZone implements TargetZone {
     // global variable - how many points will there be in a target zone
     public static final int ZONE_SIZE = 20;

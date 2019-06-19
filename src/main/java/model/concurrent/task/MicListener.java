@@ -1,14 +1,10 @@
 package main.java.model.concurrent.task;
 
 import javafx.concurrent.Task;
-import main.java.model.engine.AudioDecoder;
-
 import javax.sound.sampled.*;
 import java.io.ByteArrayOutputStream;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,7 +26,7 @@ public class MicListener extends Task<String> {
     private final static int LISTENING_DURATION, EXTRACT_LENGTH;
     private static final String MATCH_FOUND, MATCH_NOT_FOUND, LINE_NOT_SUPPORTED;
     static {
-        logger = Logger.getLogger(AudioDecoder.class.getName());
+        logger = Logger.getLogger(MicListener.class.getName());
         LISTENING_DURATION = 5; // How many times it will get X seconds of mic input
         EXTRACT_LENGTH = 5000; // The mic input duration in seconds
         MATCH_FOUND = "This is: ";
@@ -43,13 +39,15 @@ public class MicListener extends Task<String> {
     private String matchedSong;
     // variable used to stop the loop if there is a match already.
     private boolean running = true;
+    // thread pool for managing the
+    // tasks that decode & match extracts
+    private ExecutorService executor;
 
     /**
      * The main method of the class. It opens a connection to the microphone
      * and extracts every X seconds of it in the form of a byte array. Then
-     * each of the extracts gets passed for processing in a new thread.
-     *
-     * TODO: implement thread pool
+     * each of the extracts gets passed for processing in a new thread, managed
+     * by a thread pool
      *
      * @return a string which would indicate the result of the matching. It will either
      * be a match found + song or no match found.
@@ -58,6 +56,7 @@ public class MicListener extends Task<String> {
     public String call() {
         try {
             logger.log(Level.INFO, "Trying to connect to mic!");
+
             // get the format (11025 Hz 16 bit mono)
             AudioFormat format = getAudioFormat();
             DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
@@ -73,7 +72,9 @@ public class MicListener extends Task<String> {
 
             logger.log(Level.INFO, "Connected! Listening...");
 
-            ExecutorService executor = Executors.newFixedThreadPool(LISTENING_DURATION);
+            // init the thread pool
+            executor = Executors.newFixedThreadPool(LISTENING_DURATION);
+
             // loop for LISTENING_DURATION seconds and extract every
             // EXTRACT_LENGTH second(s) for decoding and matching
             int i = 0;
@@ -97,15 +98,17 @@ public class MicListener extends Task<String> {
                     out.write(data, 0, numBytesRead);
                 }
 
-                // start a new task to decode and match the bytes from the input
-                MicMatcher micMatcher = new MicMatcher(out.toByteArray(), format, i*EXTRACT_LENGTH/1000, EXTRACT_LENGTH);
+                // init a new task and give it the extract for decoding & matching
+                MicMatcher micMatcher = new MicMatcher(out.toByteArray(), format,
+                        i*EXTRACT_LENGTH/1000, EXTRACT_LENGTH);
                 // on succeeding if there is a match found, the loop will break
                 // check the setMatchedSong method for reference
                 micMatcher.setOnSucceeded(e -> setMatchedSong(micMatcher.getValue()));
 
-                executor.submit(new Thread(micMatcher));
+                // submit to thread pool
+                executor.execute(new Thread(micMatcher));
 
-                // stop
+                // stop receiving input
                 line.stop();
                 i ++;
             }
@@ -113,10 +116,14 @@ public class MicListener extends Task<String> {
             // close the line
             line.close();
 
+            // if running is still true it means that there has been
+            // no match found yet, but we need to wait for the last extract
+            // as it will not be fully executed still.
             if(running) {
-                System.out.print("Awaiting termination");
+                executor.shutdown();
                 while(!executor.isTerminated()) {
-                    Thread.sleep(10);
+                    Thread.sleep(100);
+                    logger.log(Level.INFO, "Awaiting execution of last extract...");
                 }
             }
 
@@ -124,7 +131,6 @@ public class MicListener extends Task<String> {
 
             // check if there was a match
             if(matchedSong != null) {
-                executor.shutdownNow();
                 return MATCH_FOUND + matchedSong;
             }
         }
@@ -146,6 +152,10 @@ public class MicListener extends Task<String> {
     private void setMatchedSong(String song) {
         // the task will return null if there was no match found
         if(song != null) {
+            // there was a match - no need to start new
+            // tasks anymore - shutdown thread pool
+            executor.shutdownNow();
+            // get the matched song
             matchedSong = song;
             // stop the loop
             running = false;
