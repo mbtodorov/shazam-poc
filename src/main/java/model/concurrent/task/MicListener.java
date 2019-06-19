@@ -1,21 +1,25 @@
 package main.java.model.concurrent.task;
 
 import javafx.concurrent.Task;
-import main.java.model.fingerprint.AudioDecoder;
+import main.java.model.engine.AudioDecoder;
 
 import javax.sound.sampled.*;
 import java.io.ByteArrayOutputStream;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * This class is responsible for connecting the microphone
- * It is a Task which returns a String when succeeded. The string
+ * It is a Task which returns a String when it is done. The string
  * will be the result of the decoding and matching of the microphone.
  * It will either be a match found + song name or no match found.
  * The matching is done by taking every X seconds of microphone input
  * and opening a new task to decode and match them with the database.
- * This runs for Y amount of time and if there are no matches, returns
+ * This runs for Y amount of time and if there are no matches, returns.
  *
  * @version 1.0
  * @author Martin Todorov
@@ -27,8 +31,8 @@ public class MicListener extends Task<String> {
     private static final String MATCH_FOUND, MATCH_NOT_FOUND, LINE_NOT_SUPPORTED;
     static {
         logger = Logger.getLogger(AudioDecoder.class.getName());
-        LISTENING_DURATION = 5;
-        EXTRACT_LENGTH = 2000;
+        LISTENING_DURATION = 5; // How many times it will get X seconds of mic input
+        EXTRACT_LENGTH = 5000; // The mic input duration in seconds
         MATCH_FOUND = "This is: ";
         MATCH_NOT_FOUND = "No match found. Try again.";
         LINE_NOT_SUPPORTED = "Line not supported.";
@@ -69,6 +73,7 @@ public class MicListener extends Task<String> {
 
             logger.log(Level.INFO, "Connected! Listening...");
 
+            ExecutorService executor = Executors.newFixedThreadPool(LISTENING_DURATION);
             // loop for LISTENING_DURATION seconds and extract every
             // EXTRACT_LENGTH second(s) for decoding and matching
             int i = 0;
@@ -79,7 +84,7 @@ public class MicListener extends Task<String> {
                 // variables for storing the input
                 ByteArrayOutputStream out  = new ByteArrayOutputStream();
                 int numBytesRead;
-                byte[] data = new byte[line.getBufferSize() / 5];
+                byte[] data = new byte[1024];
 
                 line.start();
 
@@ -93,11 +98,12 @@ public class MicListener extends Task<String> {
                 }
 
                 // start a new task to decode and match the bytes from the input
-                MicMatcher micMatcher = new MicMatcher(out.toByteArray(), format);
+                MicMatcher micMatcher = new MicMatcher(out.toByteArray(), format, i*EXTRACT_LENGTH/1000, EXTRACT_LENGTH);
                 // on succeeding if there is a match found, the loop will break
                 // check the setMatchedSong method for reference
                 micMatcher.setOnSucceeded(e -> setMatchedSong(micMatcher.getValue()));
-                new Thread(micMatcher).start();
+
+                executor.submit(new Thread(micMatcher));
 
                 // stop
                 line.stop();
@@ -107,12 +113,18 @@ public class MicListener extends Task<String> {
             // close the line
             line.close();
 
-            Thread.sleep(EXTRACT_LENGTH); // TODO: remove this
+            if(running) {
+                System.out.print("Awaiting termination");
+                while(!executor.isTerminated()) {
+                    Thread.sleep(10);
+                }
+            }
 
             logger.log(Level.INFO, "Listening ended.");
 
             // check if there was a match
             if(matchedSong != null) {
+                executor.shutdownNow();
                 return MATCH_FOUND + matchedSong;
             }
         }

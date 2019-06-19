@@ -1,7 +1,7 @@
 package main.java.model.concurrent.thread;
 
 import main.java.view.SongBtn;
-import main.java.model.fingerprint.AudioDecoder;
+import main.java.model.engine.AudioDecoder;
 
 /**
  * This class is used to run computation of each song from the

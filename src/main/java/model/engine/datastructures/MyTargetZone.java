@@ -1,4 +1,4 @@
-package main.java.model.fingerprint.datastructures;
+package main.java.model.engine.datastructures;
 
 import java.util.Arrays;
 

@@ -110,10 +110,9 @@ public class DBFingerprint {
                     }
                 }
 
-                System.out.println(map.get(1));
                 // get its name
                 String result = "";
-                if (bestMatchId != 0 && map.get(bestMatchId) > hashes.length/500) {
+                if (bestMatchId != 0 && map.get(bestMatchId) > 4) {
                     ResultSet set = st.executeQuery("SELECT TITLE FROM SONGS WHERE ID_SONG = " + bestMatchId + ";");
                     while (set.next()) {
                         result = set.getString(1);

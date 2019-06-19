@@ -2,9 +2,11 @@ package main.java.view;
 
 import com.jfoenix.controls.JFXButton;
 import javafx.application.Platform;
+
 /**
  * A simple class used for buttons that are linked with songs
  * Used to store the result from applying FFT on the song.
+ * Extends JFXButton
  *
  * @version 1.0
  * @author Martin Todorov
@@ -12,14 +14,15 @@ import javafx.application.Platform;
 public class SongBtn extends JFXButton {
     // The result of an FFT applied on the song
     private double[][] points;
-    // the name
+    // the name of the song
     private String name;
 
     /**
      * Constructor
+     *
      * @param name the song name
      */
-    public SongBtn(String name) {
+    SongBtn(String name) {
         super(name);
         points = null;
         this.name = name;
@@ -42,7 +45,7 @@ public class SongBtn extends JFXButton {
     /**
      * Assign FFT result value as a private field
      *
-     * @param points
+     * @param points the FFT result
      */
     public void setPoints(double[][] points) {
         this.points = points;
@@ -52,7 +55,7 @@ public class SongBtn extends JFXButton {
         setDisable(false);
 
         // remove 'loading...'
-        updateText();
+        Platform.runLater(() -> setText(name));
     }
 
     /**
@@ -61,12 +64,4 @@ public class SongBtn extends JFXButton {
      * @return the name of the song, independent of the button text
      */
     public String getName() { return name;}
-
-    /**
-     * This method is called from a non javafx thread and it therefore uses
-     * the runLater() method. It removes the 'loading...' from the button text
-     */
-    public void updateText() {
-        Platform.runLater(() -> setText(name));
-    }
 }

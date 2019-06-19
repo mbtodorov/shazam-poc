@@ -1,8 +1,8 @@
-package main.java.model.fingerprint;
+package main.java.model.engine;
 
-import main.java.model.fingerprint.datastructures.KeyPoint;
-import main.java.model.fingerprint.datastructures.MyTargetZone;
-import main.java.model.fingerprint.datastructures.TargetZone;
+import main.java.model.engine.datastructures.KeyPoint;
+import main.java.model.engine.datastructures.MyTargetZone;
+import main.java.model.engine.datastructures.TargetZone;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,27 +39,30 @@ public class AudioFingerprint {
         // used to sum the highest points for each FFT result
         double sum = 0;
         double average;
+        int count = 0;
+        double temp;
+
+
         ArrayList<KeyPoint> keyPointArrayList = new ArrayList<>();
         // iterate the first dimension of the array
-
         for(int i = 0; i < in.length; i ++) {
 
             // iterate through the 6 logarithmic bands containing bins
             // from: 0-10, 10-20, 20-40, 40-80, etc..
             for(int j = 0; j < 6; j ++) {
                 if(j == 0) { // edge case
-                    sum += findMax(Arrays.copyOfRange(in[i], 502, 512));
+                    sum += findMax(Arrays.copyOfRange(in[i], 0, 9));
                 } else {
                     // logarithmically allocate bands
                     int start = (int) (5*Math.pow(2,j));
-                    int end = (int) (5*Math.pow(2, j+1));
+                    int end = (int) (5*Math.pow(2, j+1)) - 1;
                     // edge case
-                    if(end == 320) end = in[i].length ;
-                    sum += findMax(Arrays.copyOfRange(in[i], 512 - end, 512 - start));
+                    if(end == 319) end = in[i].length ;
+                    sum += findMax(Arrays.copyOfRange(in[i], start, end));
                 }
             }
 
-            average = sum/6; // TODO: mess around with coefficient - the lower the less points
+            average = sum/6;
             sum = 0;
 
             // iterate and allocate values which pass over the average
@@ -86,7 +89,7 @@ public class AudioFingerprint {
      * @return the max value from the double[]
      */
     private static double findMax(double[] in) {
-        double max = 0.18;
+        double max = 0.0;
         for (double v : in) {
             if (v > max) max = v;
         }
@@ -112,8 +115,6 @@ public class AudioFingerprint {
         int zoneSize = MyTargetZone.ZONE_SIZE;
         int numPts = MyTargetZone.NUM_POINTS;
         int keyPtsLen = points.length;
-
-        reverseFrequencies(points);
 
         int hashSize = keyPtsLen / (zoneSize + 1) * numPts;
         ArrayList<String> resultList = new ArrayList<>();
@@ -143,7 +144,6 @@ public class AudioFingerprint {
         int numPts = MyTargetZone.NUM_POINTS;
         int keyPtsLen = points.length;
 
-        reverseFrequencies(points);
 
         int hashSize = keyPtsLen / (zoneSize + 1) * numPts;
         ArrayList<String> resultList = new ArrayList<>();
@@ -162,10 +162,5 @@ public class AudioFingerprint {
         return resultList.toArray(new String[0]);
     }
 
-    private static void reverseFrequencies(KeyPoint[] points) {
-        int i = 0;
-        for(KeyPoint kp : points) {
-            kp.setFrequency(511-kp.getFrequency());
-        }
-    }
+
 }

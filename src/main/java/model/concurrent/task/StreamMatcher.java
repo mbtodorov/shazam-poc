@@ -1,12 +1,13 @@
 package main.java.model.concurrent.task;
 
 import javafx.concurrent.Task;
-import main.java.model.fingerprint.AudioDecoder;
+import main.java.model.engine.AudioDecoder;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,43 +18,41 @@ public class StreamMatcher extends Task<String> {
     private static final String MATCH_FOUND, MATCH_NOT_FOUND;
     static {
         logger = Logger.getLogger(StreamMatcher.class.getName());
-        EXTRACT_DURATION = 2;
+        EXTRACT_DURATION = 5;
         MATCH_FOUND = "This is: ";
         MATCH_NOT_FOUND = "No match found. Try again.";
     }
 
     private AudioFormat format;
     private AudioInputStream ais;
+    private byte[] raw;
+
 
     public StreamMatcher(AudioInputStream ais) {
         this.ais = ais;
         format = ais.getFormat();
+        raw = null;
     }
 
     @Override
     public String call() {
-        /*
         // get the length of the stream in seconds
-        long audioFileLength = 0;
+        float durationInSeconds = getDurationInSeconds(ais);
         try {
-            audioFileLength = ais.available();
+            raw = ais.readAllBytes();
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Exception thrown: " + e);
+            logger.log(Level.SEVERE, "Exception while trying to convert to raw " + e);
         }
-        int frameSize = format.getFrameSize();
-        float frameRate = format.getFrameRate();
-        float durationInSeconds = (audioFileLength / (frameSize * frameRate));
-
+        // loop and decode extracts
         String result = null;
         for(int i = 0; i < durationInSeconds; i += EXTRACT_DURATION) {
             System.out.println("index: " + i);
             AudioInputStream extract = getExtract(i);
             result = AudioDecoder.decodeStreamAndMatch(extract, false);
+            // TODO: FFT breaks if extract is too small
             if(result != null) return MATCH_FOUND + result;
         }
-         */
-        String result = AudioDecoder.decodeStreamAndMatch(ais, false);
-        if(result != null) return MATCH_FOUND + result;
+
         return MATCH_NOT_FOUND;
     }
 
@@ -62,43 +61,41 @@ public class StreamMatcher extends Task<String> {
         float bytesPerSecond = format.getFrameSize() * format.getFrameRate();
 
         AudioInputStream extract = null;
-        AudioInputStream result = null;
         try {
-            // init the result
-            extract = AudioSystem.getAudioInputStream(format, ais);
-
-            System.out.println("extract available beginning: " + extract.available());
-            // get the starting byte - start (second) * bytes per second
-
-            long startFrame = (long) (start * bytesPerSecond);
-            System.out.println("startFrame: " + startFrame + "");
-            synchronized (extract) {
-                long skipped = extract.skip(startFrame * 2);
-
-                System.out.println("skipped bytes: " + skipped);
+            long start_ = (long) (start * bytesPerSecond);
+            long end = (long) ((start + EXTRACT_DURATION) * bytesPerSecond);
+            if(start_ > Integer.MAX_VALUE || end > Integer.MAX_VALUE) {
+                logger.log(Level.SEVERE, "Integer overflow");
+                return null;
             }
-            long endFrame = (long) ((start + EXTRACT_DURATION) * bytesPerSecond);
-            System.out.println("end frame: " + endFrame + " available in extract: " + extract.available() );
-            if (endFrame > ais.available()) endFrame = ais.available();
 
+            int startFrame = (int) start_;
+            int endFrame = (int) end;
+            if (endFrame > raw.length) endFrame = raw.length;
 
-            result = new AudioInputStream(extract, format, endFrame - startFrame);
+            ByteArrayInputStream bais = new ByteArrayInputStream(Arrays.copyOfRange(raw, startFrame, endFrame));
+            extract = new AudioInputStream(bais, format, endFrame - startFrame);
 
-            long audioFileLength = result.available();
-            System.out.println(result.available() + " " + (endFrame -startFrame));
-            int frameSize = ais.getFormat().getFrameSize();
-            float frameRate = ais.getFormat().getFrameRate();
-            float durationInSeconds = (audioFileLength / (frameSize * frameRate));
-            System.out.println(durationInSeconds);
-
-
-
-            extract.close(); // ?????????
+            getDurationInSeconds(extract);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Exception thrown while trying to get stream extract: " + e);
+            e.printStackTrace();
         }
 
+        return extract;
+    }
 
-        return result;
+    private float getDurationInSeconds(AudioInputStream stream) {
+        long audioFileLength = 0;
+        try {
+            audioFileLength = stream.available();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        int frameSize = format.getFrameSize();
+        float frameRate = format.getFrameRate();
+        float durationInSeconds = (audioFileLength / (frameSize * frameRate));
+        System.out.println("duration: " + durationInSeconds);
+        return durationInSeconds;
     }
 }

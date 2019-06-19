@@ -1,15 +1,10 @@
 package main.java.view;
 
-import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXToggleButton;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.image.Image;
-import javafx.stage.FileChooser;
 import main.java.model.concurrent.thread.DecodeThread;
 import main.java.model.concurrent.task.MicListener;
+import main.java.model.concurrent.task.StreamMatcher;
 import main.java.model.db.DBUtils;
-import main.java.model.fingerprint.AudioDecoder;
+import main.java.model.engine.AudioDecoder;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -17,11 +12,18 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.stage.FileChooser;
 import javafx.event.ActionEvent;
-import main.java.model.concurrent.task.StreamMatcher;
+
+// material design controls
+import com.jfoenix.controls.JFXButton;
+import com.jfoenix.controls.JFXToggleButton;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -85,7 +87,7 @@ public class Main extends Application {
     // keep the root so children can be added/removed
     private VBox root;
     // keep stage as field for resizing purposes
-    private Stage mStage;
+    private Stage stage;
 
     /**
      * Creates the example GUI and sets the stage for
@@ -112,7 +114,7 @@ public class Main extends Application {
             if (!DBUtils.existsDB()) DBUtils.initDB();
 
             // get the stage for resizing
-            mStage = stage;
+            this.stage = stage;
 
             // check if there are any songs which haven't been hashed
             int newSongs = DBUtils.checkForNewSongs(songs);
@@ -220,11 +222,11 @@ public class Main extends Application {
         // update label
         infoLbl.setText(COMPUTATION_DONE);
 
-        // enable task if it was disabled
+        // enable matching if it was disabled
         enableMatching(true);
 
         // resize
-        mStage.sizeToScene();
+        stage.sizeToScene();
     }
 
     /**
@@ -238,57 +240,57 @@ public class Main extends Application {
      * @param song the song to be decoded
      */
     private void populateGrid(String song) {
+
+        // init the btn for the song
+        SongBtn songBtn = new SongBtn(song);
+
+        // start the computation in a new thread
+        // a reference is passed so the FFT result can be assigned when computation is done
+        DecodeThread decodeThread = new DecodeThread(songBtn);
+        decodeThread.start();
+
+        // action handler & other
+        songBtn.setOnAction(this::showSpectrogram);
+        songBtn.getStyleClass().add("song-btn");
+        songBtn.setWrapText(true);
+
+        // add btn to grid
         if(songGrid.getChildren().size() < 6) {
-            // init the btn for the song
-            SongBtn songBtn = new SongBtn(song);
-
-            // start the computation in a new thread
-            // a reference is passed so the FFT result can be assigned when computation is done
-            DecodeThread decodeThread = new DecodeThread(songBtn);
-            decodeThread.start();
-
-            // action handler & other
-            songBtn.setOnAction(this::showSpectrogram);
-            songBtn.getStyleClass().add("song-btn");
-            songBtn.setWrapText(true);
-
-            // add btn to grid
             songGrid.getChildren().add(songBtn);
             if(songGrid.getChildren().size() == 5) {
-                Label andOther = new Label("...");
-                songGrid.getChildren().add(andOther);
+                songGrid.getChildren().add(new Label("..."));
             }
-        } else {
-            DecodeThread decodeThread = new DecodeThread(song);
-            decodeThread.start();
         }
     }
 
-
     /**
-     * TODO: comment & log
+     * This is the method used to connect to the microphone and
+     * try to find a match in the DB for the input. Creates a new Task
+     * which does the work. Displays result on a label.
      *
      * @param e btn
      */
     @SuppressWarnings("unused")
     private void go(ActionEvent e) {
-        // disable task
+        // disable matching
         enableMatching(false);
 
-        // add the label if it isn't already
+        // add the match label if it isn't added already
         addMatchLabel();
 
         try {
-            // create the task
-            MicListener micListener = new MicListener();
             // update label
             matchLbl.setText(LISTENING);
-            // when its done listening - update label and re-enable task
+
+            // create the task
+            MicListener micListener = new MicListener();
+            // when its done listening - update label and re-enable matching
             micListener.setOnSucceeded(event -> {
                 enableMatching(true);
                 matchLbl.setText(micListener.getValue());
             });
 
+            // begin
             new Thread(micListener).start();
         }
         catch(Exception exc) {
@@ -297,23 +299,26 @@ public class Main extends Application {
     }
 
     /**
-     * TODO: comment & log
+     * This method is invoked from the choose file button. It prompts
+     * the user to select an audio file of appropriate format. Once
+     * an acceptable file is selected a new Task is started which tries to
+     * find a match in the DB. Displays result on a label
      *
-     * @param e
+     * @param e the choose file button
      */
     private void chooseFile(ActionEvent e) {
-        // file chooser
+        // file chooser for wav files only
         FileChooser.ExtensionFilter wavFilter = new FileChooser.ExtensionFilter("WAV Files", "*.wav");
         FileChooser wavChooser = new FileChooser();
         wavChooser.getExtensionFilters().add(wavFilter);
-        File input = wavChooser.showOpenDialog(mStage);
+        File input = wavChooser.showOpenDialog(stage);
 
         // input is null if cancel was clicked
         if(input != null) {
             // check if the format is supported
             boolean isFormatSupported = AudioDecoder.checkFormat(input);
             if(isFormatSupported) {
-                // add a match status label & disable matching unitl done
+                // add a match status label & disable matching until done
                 addMatchLabel();
                 enableMatching(false);
                 matchLbl.setText(COMPARING);
@@ -327,6 +332,7 @@ public class Main extends Application {
                         matchLbl.setText(streamMatcher.getValue());
                     });
 
+                    // begin
                     new Thread(streamMatcher).start();
                 } catch (Exception xcc) {
                     logger.log(Level.SEVERE, "Exception thrown while matching stream " + e);
@@ -385,7 +391,7 @@ public class Main extends Application {
         logger.log(Level.INFO, "Switched input method.");
 
         // resize
-        mStage.sizeToScene();
+        stage.sizeToScene();
     }
 
     /**
@@ -418,6 +424,6 @@ public class Main extends Application {
             root.getChildren().add(matchLbl);
         }
 
-        mStage.sizeToScene();
+        stage.sizeToScene();
     }
 }

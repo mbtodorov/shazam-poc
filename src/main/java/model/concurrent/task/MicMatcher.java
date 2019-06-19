@@ -1,7 +1,8 @@
 package main.java.model.concurrent.task;
 
 import javafx.concurrent.Task;
-import main.java.model.fingerprint.AudioDecoder;
+import main.java.model.engine.AudioDecoder;
+import main.java.model.engine.AudioUtils;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -27,15 +28,21 @@ public class MicMatcher extends Task<String> {
     // the microphone format used
     private AudioFormat micFormat;
 
+    private int beginning;
+
+    private int extractLength;
+
     /**
      * Constructor
      *
      * @param raw the mic data
      * @param micFormat the mic format used
      */
-    MicMatcher(byte[] raw, AudioFormat micFormat) {
+    MicMatcher(byte[] raw, AudioFormat micFormat, int beginning, int extractLength) {
         this.raw = raw;
         this.micFormat = micFormat;
+        this.beginning = beginning;
+        this.extractLength = extractLength/1000;
     }
 
     /**
@@ -52,11 +59,11 @@ public class MicMatcher extends Task<String> {
         ByteArrayInputStream bais = new ByteArrayInputStream(raw);
         AudioInputStream stream = new AudioInputStream(bais, micFormat, raw.length);
 
-        logger.log(Level.INFO, "Begin decoding and matching microphone extract...");
+        logger.log(Level.INFO, "Begin decoding and matching microphone extract from " + beginning + "s to " + (beginning + extractLength) + "s...");
 
         String result = AudioDecoder.decodeStreamAndMatch(stream, true);
 
-        logger.log(Level.INFO, "Done decoding and matching microphone extract!");
+        logger.log(Level.INFO, "Done decoding and matching microphone extract from " + beginning + "s to " + (beginning + extractLength) + "s!");
 
         return result;
     }

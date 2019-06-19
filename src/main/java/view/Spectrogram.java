@@ -1,12 +1,13 @@
 package main.java.view;
 
+import main.java.model.engine.AudioFingerprint;
+import main.java.model.engine.datastructures.KeyPoint;
+
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import main.java.model.fingerprint.AudioFingerprint;
-import main.java.model.fingerprint.datastructures.KeyPoint;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -23,14 +24,16 @@ import java.util.logging.Logger;
  */
 class Spectrogram extends VBox {
     // logger
-    private final static Logger logger = Logger.getLogger(Spectrogram.class.getName());
+    private final static Logger logger;
     // Strings used for the GUI
     private static final String SPECTROGRAM_LBL, KEYPTS_LBL;
     static {
+        logger = Logger.getLogger(Spectrogram.class.getName());
         SPECTROGRAM_LBL = " Spectrogram for ";
         KEYPTS_LBL = "Key points extracted from the spectrogram:";
     }
 
+    // The FFT result
     private double[][] points;
     /**
      * Constructor for class Spectrogram
@@ -77,22 +80,30 @@ class Spectrogram extends VBox {
      * @return an image representing the spectrogram
      */
     private BufferedImage drawSpectrogram() {
+        // the spectrogram image
+        BufferedImage result = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
 
-        BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
-        double ratio;
+        // we need to reverse the points because the image
+        // has the y coordinate going down
+        double[][] reversedPoints = new double[points.length][points[0].length];
+        for(int i = 0; i < reversedPoints.length; i ++) {
+            for(int j = 0; j < reversedPoints[0].length; j ++) {
+                reversedPoints[i][j] = points[i][points[0].length - 1 - j];
+            }
+        }
 
         //iterate and paint based on frequency amplitude
         for (int x = 0; x < points.length; x++) {
             for (int y = 0; y < points[x].length; y++) {
-                ratio = points[x][y];
-                Color newColor = getColor(1.0 - ratio);
-                theImage.setRGB(x, y, newColor.getRGB());
+                // get color based on amplitude
+                Color newColor = getColor(1.0 - reversedPoints[x][y]);
+                result.setRGB(x, y, newColor.getRGB());
             }
         }
 
-        // resize so it can fit in the window
-        theImage = resize(theImage);
-        return theImage;
+        // resize to fit screen better
+        result = resize(result);
+        return result;
     }
 
     /**
@@ -107,15 +118,26 @@ class Spectrogram extends VBox {
     private BufferedImage drawKeyPoints() {
         // get the keypoints
         KeyPoint[] keyPoints = AudioFingerprint.extractKeyPoints(points);
-        BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
 
+        // init the result image
+        BufferedImage result = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
+
+        // color everything white
         for (int x = 0; x < points.length; x++) {
             for (int y = 0; y < points[x].length; y++) {
                 Color white = Color.WHITE;
-                theImage.setRGB(x, y, white.getRGB());
+                result.setRGB(x, y, white.getRGB());
             }
         }
 
+        // reverse the frequencies of the points
+        // because the image has the y coordinate going down
+        for(KeyPoint kp : keyPoints) {
+            kp.setFrequency(511 - kp.getFrequency());
+        }
+
+        // for each key point, pain a square
+        // around its coordinates
         for(KeyPoint kp : keyPoints) {
             int x = kp.getTime();
             int y = kp.getFrequency();
@@ -131,13 +153,14 @@ class Spectrogram extends VBox {
             for(int i = xFloor; i < xCeil; i ++ ) { //iterate and paint square around point
                 for(int j = yFloor; j < yCeil; j ++) {
                     Color black = Color.BLACK;
-                    theImage.setRGB(i, j, black.getRGB());
+                    result.setRGB(i, j, black.getRGB());
                 }
             }
         }
 
-        theImage = resize(theImage);
-        return theImage;
+        // resize to fit screen better
+        result = resize(result);
+        return result;
     }
 
     /**

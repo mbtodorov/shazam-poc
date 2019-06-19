@@ -1,9 +1,9 @@
-package main.java.model.fingerprint;
+package main.java.model.engine;
 
 import biz.source_code.dsp.filter.FilterCharacteristicsType;
 import biz.source_code.dsp.filter.FilterPassType;
 import biz.source_code.dsp.sound.IirFilterAudioInputStreamFisher;
-import main.java.model.fingerprint.fft.FFT;
+import main.java.model.engine.fft.FFT;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -176,7 +176,7 @@ public class AudioUtils {
                 if (amp_square == 0.0) {
                     results[i][j] = amp_square;
                 } else {
-                    results[i][nY - j - 1] = 10 * Math.log10(Math.max(amp_square, threshold));
+                    results[i][j] = 10 * Math.log10(Math.max(amp_square, threshold));
                 }
 
                 //find MAX and MIN amplitude
@@ -187,6 +187,7 @@ public class AudioUtils {
 
             }
         }
+
 
         logger.log(Level.INFO, "FFT applied successfully! \n Maximum amplitude: " +
                    maxAmp +" \n Minimum amplitude: " + minAmp + "\n x: " + results.length + "\n y: " +
@@ -199,6 +200,7 @@ public class AudioUtils {
                 results[i][j] = (results[i][j] - minAmp) / diff;
             }
         }
+
         return results;
     }
 

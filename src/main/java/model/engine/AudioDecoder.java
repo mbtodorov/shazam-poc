@@ -1,11 +1,15 @@
-package main.java.model.fingerprint;
+package main.java.model.engine;
 
 import main.java.model.db.DBFingerprint;
 import main.java.model.db.DBUtils;
-import main.java.model.fingerprint.datastructures.KeyPoint;
+import main.java.model.engine.datastructures.KeyPoint;
 
+import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,7 +56,7 @@ public class AudioDecoder {
      * Takes a file (wav) and undergoes a series of conversions:
      * low-pass filter for frequencies > 5000 hZ; down-sample to 11025 hZ;
      * convert to mono; hamming window function with size 1024; fft. Finally
-     * it extracts a fingerprint and  populates a database if the file is not
+     * it extracts a engine and  populates a database if the file is not
      * in the database already.
      *
      * @param songName the file to decodeWav
@@ -158,7 +162,6 @@ public class AudioDecoder {
             // Audio input stream automatically filters the header bytes
             AudioInputStream ais = AudioUtils.lowPassFilterAIS(in);
 
-            audio = new byte[ais.available()];
             audio = ais.readAllBytes();
 
             ais.close();
@@ -192,6 +195,9 @@ public class AudioDecoder {
         // Step 3: convert the byte[] raw audio to double[] raw audio
 
         assert decodedAudio != null;
+
+        //AudioUtils.writeWavToSystem(decodedAudio, "mic" + Thread.currentThread().getName());
+
         double[] finalAudio = AudioUtils.byteToDoubleArr(decodedAudio);
 
         // Step 4: apply FFT to the double[] to get the point data needed for extracting key points
@@ -210,6 +216,23 @@ public class AudioDecoder {
 
         String result = DBFingerprint.lookForMatches(hashes);
 
+        /*
+        try {
+            // retrieve image
+            BufferedImage bi = drawSpectrogram(FFTResults);
+            File outputfile = new File("spectrogram" + Thread.currentThread().getName() + ".png");
+            ImageIO.write(bi, "png", outputfile);
+
+            BufferedImage kp = drawKeyPoints(FFTResults);
+            File out = new File("keypoints" + Thread.currentThread().getName() + ".png");
+            ImageIO.write(kp, "png", out);
+
+        } catch (IOException e) {
+
+        }
+
+
+         */
         // log time taken
         long end = System.currentTimeMillis();
         logger.log(Level.INFO, "Time taken to decode input stream: " + (end-start) + "ms");
@@ -252,4 +275,63 @@ public class AudioDecoder {
                 frameRate, false);
     }
 
+    /*
+    private static BufferedImage drawSpectrogram(double[][] points) {
+
+        BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
+        double ratio;
+
+        //iterate and paint based on frequency amplitude
+        for (int x = 0; x < points.length; x++) {
+            for (int y = 0; y < points[x].length; y++) {
+                ratio = points[x][y];
+                Color newColor = getColor(1.0 - ratio);
+                theImage.setRGB(x, y, newColor.getRGB());
+            }
+        }
+
+        return theImage;
+    }
+
+    private static BufferedImage drawKeyPoints(double[][] points) {
+        // get the keypoints
+        KeyPoint[] keyPoints = AudioFingerprint.extractKeyPoints(points);
+        BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
+
+        for (int x = 0; x < points.length; x++) {
+            for (int y = 0; y < points[x].length; y++) {
+                Color white = Color.WHITE;
+                theImage.setRGB(x, y, white.getRGB());
+            }
+        }
+
+        for(KeyPoint kp : keyPoints) {
+            int x = kp.getTime();
+            int y = kp.getFrequency();
+            int sqSize = 4;
+            int xFloor = x - sqSize;
+            if(xFloor < 0) xFloor = 0; // edge
+            int xCeil = x + sqSize;
+            if(xCeil > points.length) xCeil = points.length - 1; // edge
+            int yFloor = y - sqSize/2; // divide by 2 because of resize
+            if(yFloor < 0) yFloor = 0; // edge
+            int yCeil = y + sqSize/2; // divide by 2 because of resize
+            if(yCeil > points[0].length) yCeil = points[0].length - 1; // edge
+            for(int i = xFloor; i < xCeil; i ++ ) { //iterate and paint square around point
+                for(int j = yFloor; j < yCeil; j ++) {
+                    Color black = Color.BLACK;
+                    theImage.setRGB(i, j, black.getRGB());
+                }
+            }
+        }
+        return theImage;
+    }
+
+    private static Color getColor(double power) {
+        double H = power * 0.3; // Hue
+        double S = 1.0; // Saturation
+        double B = 1.0; // Brightness
+
+        return Color.getHSBColor((float) H, (float) S, (float) B);
+    }*/
 }

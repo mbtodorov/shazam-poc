@@ -1,4 +1,4 @@
-package main.java.model.fingerprint.fft;
+package main.java.model.engine.fft;
 
 /**
  * @author Orlando Selenu
