@@ -175,7 +175,7 @@ public class Main extends Application {
             stage.setScene(scene);
             stage.show();
             stage.sizeToScene();
-            stage.getIcons().add(new Image(Main.class.getResourceAsStream("./style/icon.png")));
+            stage.getIcons().add(new Image(Main.class.getResourceAsStream("./style/icon.ico")));
             stage.setOnCloseRequest(e -> Platform.exit());
 
             logger.log(Level.INFO, "Successfully launched application!");
