@@ -79,22 +79,25 @@ public class DBFingerprint {
             logger.log(Level.INFO, "Done inserting hashes for song " + songName + " (id: " + id + ") in DB!");
 
         } catch (Exception e) {
-            System.out.println(e);
+            logger.log(Level.SEVERE, "Exception thrown while inserting fingerprint " + e);
         }
     }
 
     /**
-     * TODO: this
+     * This method matches the hashes generated from mic or stream input to
+     * the ones in the DB. It calculates minimum matches required based ot
+     * the hash size and whether or not it is mic input (more tolerable when mic).
      *
-     * @param hashes
-     * @return
+     * @param hashes the hashes to be matched
+     * @param isMic whether the input is from mic or not
+     * @return no match found or the song name with enough matches
      */
     public static String lookForMatches(long[] hashes, boolean isMic) {
         HashMap<Integer, Integer> map = new HashMap<>();
 
         // calculate the minimum matches required based on hash size, and whether its mic or not
         int toleranceFactor = 12;
-        if(isMic) toleranceFactor = 24;
+        if(isMic) toleranceFactor = 16;
         int hashesPerZone = MyTargetZone.ZONE_SIZE/MyTargetZone.NUM_POINTS;
         int numKeyPoints = hashes.length / hashesPerZone;
         int minimumMatches = numKeyPoints/(MyTargetZone.NUM_POINTS * toleranceFactor);
@@ -120,9 +123,9 @@ public class DBFingerprint {
                             map.put(id, map.get(id) + 1);
                             if(map.get(id) > minimumMatches) {
                                 ResultSet sett = st.executeQuery("SELECT TITLE FROM SONGS WHERE ID_SONG = " + id + ";");
-                                while (sett.next()) {
-                                    return sett.getString(1);
-                                }
+                                sett.next();
+                                return sett.getString(1);
+
                             }
                         } else {
                             map.put(id, 1);
@@ -154,7 +157,7 @@ public class DBFingerprint {
                 if (!result.equals("")) return result;
 
             } catch (Exception e) {
-                System.out.println(e);
+                logger.log(Level.SEVERE, "Exception thrown while trying to find matches " + e );
             }
         }
         return null;
