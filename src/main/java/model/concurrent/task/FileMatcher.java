@@ -15,7 +15,7 @@ import java.util.logging.Logger;
  * This class is used for decoding and matching audio streams
  * It takes the stream and splits and begins decoding it part
  * by part - each of which has a length equal to the EXTRACT_LENGTH
- * static field. There are edge cases where if there is only < 1 second
+ * static field. There are edge cases where if there is only < 2 seconds
  * left from the stream it doesn't get split. Each of those parts is then
  * consecutively decoded and matched. If a match is found, it returns the song
  * name as a String, else returns no match found.
@@ -87,9 +87,9 @@ public class FileMatcher extends Task<String> {
         for(int i = 0; i < durationInSeconds; i += EXTRACT_LENGTH) {
             logger.log(Level.INFO, "Begin fetching extract number " + count);
             AudioInputStream extract;
-            // check if there will be less than a second remaining
+            // check if there will be less than two seconds remaining
             // in the original stream
-            if((durationInSeconds - 1) < (i + EXTRACT_LENGTH)) {
+            if((durationInSeconds - 2) < (i + EXTRACT_LENGTH)) {
                 // if there is, get the extract until the end;
                 extract = getExtract(i, true);
                 i += EXTRACT_LENGTH;

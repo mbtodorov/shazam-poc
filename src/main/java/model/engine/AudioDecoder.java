@@ -106,24 +106,20 @@ public class AudioDecoder {
 
             // Step 1: Extract only the key points from the FFT results
 
-            KeyPoint[] keyPoints = AudioFingerprint.extractKeyPoints(FFTResults);
+            KeyPoint[][] keyPoints = AudioFingerprint.extractKeyPoints(FFTResults);
 
             // Step 2: get the fingerprints from the song
 
             String[] hashes = AudioFingerprint.hash(keyPoints, false);
 
-            synchronized (AudioDecoder.class) { // concurrent can't write to DB at the same time
-                // Step 3: init an entry for the song in the database
+            // Step 3: init an entry for the song in the database
 
-                DBFingerprint.initSongInDB(songName);
+            DBFingerprint.initSongInDB(songName);
 
-                // Step 4: insert the hashes in the DB
+            // Step 4: insert the hashes in the DB
 
-                DBFingerprint.insertFingerprint(hashes, songName);
-            }
+            DBFingerprint.insertFingerprint(hashes, songName);
         }
-
-        //AudioUtils.writeWavToSystem(audioDownSampled, "test");
 
         // log time taken
         long end = System.currentTimeMillis();
@@ -196,7 +192,7 @@ public class AudioDecoder {
 
         // Step 5: extract key points from FFT result
 
-        KeyPoint[] keyPoints = AudioFingerprint.extractKeyPoints(FFTResults);
+        KeyPoint[][] keyPoints = AudioFingerprint.extractKeyPoints(FFTResults);
 
         // Step 6: Extract ALL possible hashes from the keypoints
 

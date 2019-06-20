@@ -122,8 +122,8 @@ public class MicListener extends Task<String> {
             if(running) {
                 executor.shutdown();
                 while(!executor.isTerminated()) {
-                    Thread.sleep(100);
-                    logger.log(Level.INFO, "Awaiting execution of last extract...");
+                    Thread.sleep(500);
+                    logger.log(Level.INFO, "Awaiting execution of all extracts...");
                 }
             }
 

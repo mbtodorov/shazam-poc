@@ -11,6 +11,8 @@ import javafx.scene.layout.VBox;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -116,9 +118,6 @@ class Spectrogram extends VBox {
      * @return the result buffered image representing the keypoints
      */
     private BufferedImage drawKeyPoints() {
-        // get the keypoints
-        KeyPoint[] keyPoints = AudioFingerprint.extractKeyPoints(points);
-
         // init the result image
         BufferedImage result = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
 
@@ -130,14 +129,40 @@ class Spectrogram extends VBox {
             }
         }
 
+        // paint red lines for each logarithmic band
+        Color red = Color.RED;
+        for(int i = 0; i < points.length; i ++) {
+            result.setRGB(i, 501, red.getRGB());
+            result.setRGB(i, 502, red.getRGB());
+            result.setRGB(i, 491, red.getRGB());
+            result.setRGB(i, 492, red.getRGB());
+            result.setRGB(i, 471, red.getRGB());
+            result.setRGB(i, 472, red.getRGB());
+            result.setRGB(i, 431, red.getRGB());
+            result.setRGB(i, 432, red.getRGB());
+            result.setRGB(i, 351, red.getRGB());
+            result.setRGB(i, 352, red.getRGB());
+            result.setRGB(i, 191, red.getRGB());
+            result.setRGB(i, 192, red.getRGB());
+        }
+
+        // get the keypoints
+        KeyPoint[][] keyPoints2D = AudioFingerprint.extractKeyPoints(points);
+
+        // convert to single dimension array
+        ArrayList<KeyPoint> keyPointsList = new ArrayList<>();
+        for (KeyPoint[] value : keyPoints2D) {
+            keyPointsList.addAll(Arrays.asList(value));
+        }
+
+        KeyPoint[] keyPoints = keyPointsList.toArray(new KeyPoint[0]);
+
         // reverse the frequencies of the points
         // because the image has the y coordinate going down
         for(KeyPoint kp : keyPoints) {
             kp.setFrequency(511 - kp.getFrequency());
         }
 
-        // for each key point, pain a square
-        // around its coordinates
         for(KeyPoint kp : keyPoints) {
             int x = kp.getTime();
             int y = kp.getFrequency();
@@ -158,6 +183,17 @@ class Spectrogram extends VBox {
             }
         }
 
+        /*
+        // paint a black point for each keypoint
+        for(KeyPoint kp : keyPoints) {
+            int x = kp.getTime();
+            int y = kp.getFrequency();
+            Color black = Color.BLACK;
+            result.setRGB(x, y, black.getRGB());
+        }
+
+
+         */
         // resize to fit screen better
         result = resize(result);
         return result;
