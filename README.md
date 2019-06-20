@@ -69,7 +69,7 @@ stuck to the idea of target zones, but my implementation of fingerprinting is ve
 &emsp; Insert all fingerprints in a DB and match them with a song id. There is a separate table which matches song id's with song names
 
 ### Matching input
-![Process] (http://coding-geek.com/wp-content/uploads/2015/05/getting_spectrogram-min.jpg);
+![Process] (https://coding-geek.com/wp-content/uploads/2015/05/getting_spectrogram-min.jpg);
 
 * #### Get an audio input stream
 &emsp; The user can either choose to look for matches from a file or use the microphone. On a side note, the
