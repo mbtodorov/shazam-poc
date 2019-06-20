@@ -96,12 +96,13 @@ public class DBFingerprint {
         HashMap<Integer, Integer> map = new HashMap<>();
 
         // calculate the minimum matches required based on hash size, and whether its mic or not
-        int toleranceFactor = 12;
-        if(isMic) toleranceFactor = 16;
+        int toleranceFactor = 20;
+        if(isMic) toleranceFactor = 24;
         int hashesPerZone = MyTargetZone.ZONE_SIZE/MyTargetZone.NUM_POINTS;
         int numKeyPoints = hashes.length / hashesPerZone;
         int minimumMatches = numKeyPoints/(MyTargetZone.NUM_POINTS * toleranceFactor);
-        if(!isMic && minimumMatches < 4) minimumMatches = 4;
+        if(!isMic && minimumMatches < 5) minimumMatches = 5;
+        if(minimumMatches > 20) minimumMatches = 20;
         System.out.println("Minimum matches required: " + minimumMatches);
         synchronized (DBFingerprint.class) {
             try {
@@ -121,7 +122,7 @@ public class DBFingerprint {
                         System.out.print(id + " ");
                         if (map.containsKey(id)) {
                             map.put(id, map.get(id) + 1);
-                            if(map.get(id) > minimumMatches) {
+                            if(map.get(id) >= minimumMatches) {
                                 ResultSet sett = st.executeQuery("SELECT TITLE FROM SONGS WHERE ID_SONG = " + id + ";");
                                 sett.next();
                                 return sett.getString(1);
@@ -147,7 +148,7 @@ public class DBFingerprint {
 
                 // get its name
                 String result = "";
-                if (bestMatchId != 0 && map.get(bestMatchId) > minimumMatches) {
+                if (bestMatchId != 0 && map.get(bestMatchId) >= minimumMatches) {
                     ResultSet set = st.executeQuery("SELECT TITLE FROM SONGS WHERE ID_SONG = " + bestMatchId + ";");
                     while (set.next()) {
                         result = set.getString(1);
