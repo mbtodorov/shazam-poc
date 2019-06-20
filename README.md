@@ -70,7 +70,7 @@ stuck to the idea of target zones, but my implementation of fingerprinting is ve
 
 ### Matching input
 <p align = "center">
-![The process](https://user-images.githubusercontent.com/25320807/59853659-0030c480-937a-11e9-8618-ce6ad81eac5e.jpg)
+<img src = https://user-images.githubusercontent.com/25320807/59853659-0030c480-937a-11e9-8618-ce6ad81eac5e.jpg>
 </p>
 
 * #### Get an audio input stream
@@ -80,27 +80,40 @@ as robust as shazam is a much taller order.
 
 * #### Split the stream
 &emsp; To reduce the computation time, the app only takes a portion of the input stream (5 seconds for mic and 20 seconds for file).
-It then consecutevily decodes, fingerprints each extract and looks for matches in the DB.
+It then consecutively decodes, fingerprints and looks for matches in the DB for each portion of the stream.
 
 * #### Decode
-&emsp; The mic input is automatically sampled at 11025 Hz and has only one channel. The file streams undergoes this computation
-using the same algorithms used before. Then, same as before, I apply FFT with window size 1024, extract only key-points from the
+&emsp; The mic input is automatically sampled at 11025 Hz and has only one channel. The file stream undergoes this computation
+using the same algorithms that decode the songs initially. Then, same as before, I apply FFT with window size 1024, extract only key-points from the
 spectrogram and get their fingerprints
 
 * #### Look for matches in DB
-&emsp; TODO
+&emsp; Finally, I check for matches in the DB. A lot of things are considered there, check lookForMatches method in DBFingerprint class.
 
-# How to run the code
-### VM options for Intellij
+# How to use
+### 1. VM options for Intellij
+&emsp; I made this project with IntelliJ. Here are the VM Options I use:
 ```
 -p
-"C:\Program Files\Java\javafx-sdk-11.0.2\lib"
+"C:\Program Files\Java\javafx-sdk-12.0.1\lib"
 --add-modules=javafx.controls,javafx.fxml
 --add-exports=javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED
 --add-exports=javafx.controls/com.sun.javafx.scene.control.behavior=ALL-UNNAMED
 --add-exports=javafx.graphics/com.sun.javafx.scene.traversal=ALL-UNNAMED
 ```
-### Setup a MySQL local database
-&emsp; TODO
-# References
-&emsp; TODO
+### 2. Setup a MySQL local database
+&emsp; In the DBConnection class, edit the values of the private fields to connect to your local MySQL database.
+It could work with something that is not MySQL, but I'm not sure if all statements would be interpreted properly.
+You don't have to worry about creating tables - the app will do that by itself.
+
+### 3. Get .wav files
+&emsp; Populate the {root}/music dir with .wav files.
+
+### Done! Run the app!
+&emsp; Run the application from the Main.java class. It will create the tables needed in the DB and sees that
+there are unrecognizable songs in the music dir. Click the 'Compute' button, wait while the app fingerprints all songs, 
+then choose an input method and test it!
+
+#### Questions? 
+Email me any questions you have @martin.b.todorov@gmail.com
+
