@@ -110,7 +110,7 @@ public class AudioDecoder {
 
             // Step 2: get the fingerprints from the song
 
-            String[] hashes = AudioFingerprint.hash(keyPoints, false);
+            long[] hashes = AudioFingerprint.hash(keyPoints, false);
 
             // Step 3: init an entry for the song in the database
 
@@ -196,11 +196,11 @@ public class AudioDecoder {
 
         // Step 6: Extract ALL possible hashes from the keypoints
 
-        String[] hashes = AudioFingerprint.hash(keyPoints, true);
+        long[] hashes = AudioFingerprint.hash(keyPoints, true);
 
         // Step 7: look for matching fingerprints in DB.
 
-        String result = DBFingerprint.lookForMatches(hashes);
+        String result = DBFingerprint.lookForMatches(hashes, isMic);
 
         /* Uncomment to test
         try {

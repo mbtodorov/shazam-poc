@@ -79,6 +79,10 @@
     -fx-background-color: rgba(1,167,255, 0.2);
 }
 
+.song-btn:disabled {
+    -fx-font-style: italic;
+}
+
 .go-btn {
     -fx-font-size: 20pt;
     -fx-background-radius: 130px;

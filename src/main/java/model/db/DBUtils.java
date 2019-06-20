@@ -58,7 +58,7 @@ public class DBUtils {
 
             statement.executeUpdate("CREATE TABLE SONGS (ID_SONG INT(11) NOT NULL " +
                     "AUTO_INCREMENT,TITLE VARCHAR(60) NOT NULL, PRIMARY KEY (ID_SONG));");
-            statement.executeUpdate("CREATE TABLE HASHES (HASH_ VARCHAR(30) NOT NULL, " +
+            statement.executeUpdate("CREATE TABLE HASHES (HASH_ BIGINT NOT NULL, " +
                     "SONG_ID INT(11) NOT NULL);");
             statement.executeUpdate("ALTER TABLE HASHES ADD CONSTRAINT VALID FOREIGN KEY (SONG_ID) " +
                     "REFERENCES SONGS (ID_SONG) ON DELETE CASCADE ON UPDATE CASCADE; ");

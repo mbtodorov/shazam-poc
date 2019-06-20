@@ -1,5 +1,7 @@
 package main.java.model.engine.datastructures;
 
+import java.util.ArrayList;
+
 /**
  * An interface defining what a TargetZone should do.
  *
@@ -13,5 +15,5 @@ public interface TargetZone {
      *
      * @return The string array containing all hashes.
      */
-    String[] getHashes();
+    ArrayList<Long> getHashes();
 }

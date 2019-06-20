@@ -6,7 +6,6 @@ import main.java.model.engine.datastructures.TargetZone;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,11 +37,11 @@ public class AudioFingerprint {
         logger.log(Level.INFO, "Begin extracting key points from FFT result...");
 
         // extract keypoints from each of the 7 logarithmic bins
-        ArrayList<KeyPoint> bin1 = findPeaks(in, 0, 10, 10, 1.18, 0.8);
-        ArrayList<KeyPoint> bin2 = findPeaks(in, 10, 20, 12, 1.15, 0.75);
-        ArrayList<KeyPoint> bin3 = findPeaks(in, 20, 40, 14, 1.18, 0.7);
-        ArrayList<KeyPoint> bin4 = findPeaks(in, 40, 80, 16, 1.28, 0.7);
-        ArrayList<KeyPoint> bin5 = findPeaks(in, 80, 160, 18, 1.3, 0.72);
+        ArrayList<KeyPoint> bin1 = findPeaks(in, 0, 10, 10, 1.25, 0.8);
+        ArrayList<KeyPoint> bin2 = findPeaks(in, 10, 20, 12, 1.23, 0.75);
+        ArrayList<KeyPoint> bin3 = findPeaks(in, 20, 40, 14, 1.25, 0.7);
+        ArrayList<KeyPoint> bin4 = findPeaks(in, 40, 80, 16, 1.3, 0.7);
+        ArrayList<KeyPoint> bin5 = findPeaks(in, 80, 160, 18, 1.3, 0.74);
         ArrayList<KeyPoint> bin6 = findPeaks(in, 160, 320, 18, 1.4, 0.7);
         ArrayList<KeyPoint> bin7 = findPeaks(in, 320, 512, 20, 1.49, 0.68);
 
@@ -118,38 +117,49 @@ public class AudioFingerprint {
     }
 
     /**
-     * A method to extract fingerprints from
-     * the keypoints array.
+     * This method extracts fingerprints from a KeyPoint 2D array.
+     * the first dimension represents a frequency bin and the second
+     * the key points from it. It extracts them bin by bin so the recognition
+     * can be more robust. For example the microphone can't detect low frequencies
+     * and if there are hashes linked with them none will match the input.
      *
      * @param points the keypoints from the FFT result
+     * @param hashAll whether or not to generate hashes regardless of time. This is false when its
+     *                decoding a song and true when its decoding input for matching
      * @return the fingerprints
      */
-    static String[] hash(KeyPoint[][] points, boolean hashAll) {
+    static long[] hash(KeyPoint[][] points, boolean hashAll) {
         // hash code parameters
         int zoneSize = MyTargetZone.ZONE_SIZE;
-        int numPts = MyTargetZone.NUM_POINTS;
-        int keyPtsLen = points.length;
+        int keyPtsLen = 0;
 
-        int hashSize = keyPtsLen / (zoneSize + 1) * numPts;
-        ArrayList<String> resultList = new ArrayList<>();
+        for(KeyPoint[] bin : points) {
+            keyPtsLen += bin.length;
+        }
 
-        // TODO: fix hash size
-        logger.log(Level.INFO, "Begin hashing key points (" + keyPtsLen + ") into  " + hashSize + " hashes");
+        ArrayList<Long> resultList = new ArrayList<>();
+
+        logger.log(Level.INFO, "Begin hashing key points (" + keyPtsLen + " total)...");
 
         int increment = 1;
         if(!hashAll) increment += zoneSize;
 
         for(KeyPoint[] bin : points) {
             for (int i = 0; i < bin.length - (zoneSize + 1); i += increment) {
-                KeyPoint[] zone = Arrays.copyOfRange(bin, i, zoneSize + 1 + i);
+                KeyPoint[] zone;
+                if(!hashAll && bin.length - (zoneSize + 1) < i) {
+                    i = bin.length - (zoneSize + 1);
+                    zone = Arrays.copyOfRange(bin, i, bin.length);
+                } else {
+                    zone = Arrays.copyOfRange(bin, i, zoneSize + 1 + i);
+                }
                 TargetZone tz = new MyTargetZone(zone);
-                List<String> hashes = Arrays.asList(tz.getHashes());
-                resultList.addAll(hashes);
+                resultList.addAll(tz.getHashes());
             }
         }
 
-        logger.log(Level.INFO, "Done hashing points (" + keyPtsLen + ") into  " + resultList.size() + " hashes!");
+        logger.log(Level.INFO, "Done hashing points into " + resultList.size() + " hashes!");
 
-        return resultList.toArray(new String[0]);
+        return resultList.stream().mapToLong(Long::longValue).toArray();
     }
 }

@@ -35,7 +35,7 @@ public class FileMatcher extends Task<String> {
     private static final String MATCH_FOUND, MATCH_NOT_FOUND, TOO_LONG;
     static {
         logger = Logger.getLogger(FileMatcher.class.getName());
-        EXTRACT_LENGTH = 10; // the length in seconds of the split streams
+        EXTRACT_LENGTH = 20; // the length in seconds of the split streams
         MATCH_FOUND = "This is: ";
         MATCH_NOT_FOUND = "No match found. Try again.";
         TOO_LONG = "File is too long.";

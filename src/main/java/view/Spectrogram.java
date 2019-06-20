@@ -183,7 +183,7 @@ class Spectrogram extends VBox {
             }
         }
 
-        /*
+        /* -- Uncomment to only paint a pixel, not an entire square
         // paint a black point for each keypoint
         for(KeyPoint kp : keyPoints) {
             int x = kp.getTime();
@@ -191,9 +191,9 @@ class Spectrogram extends VBox {
             Color black = Color.BLACK;
             result.setRGB(x, y, black.getRGB());
         }
-
-
          */
+
+
         // resize to fit screen better
         result = resize(result);
         return result;

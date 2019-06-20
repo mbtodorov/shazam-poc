@@ -1,5 +1,7 @@
 package main.java.model.db;
 
+import main.java.model.engine.datastructures.MyTargetZone;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -45,12 +47,13 @@ public class DBFingerprint {
     }
 
     /**
-     * TODO: this
+     * A method to insert all of the fingerprints for a song
+     * in the DB
      *
-     * @param hashes
-     * @param songName
+     * @param hashes the fingerprints
+     * @param songName the source of the fingerprints
      */
-    public static void insertFingerprint(String[] hashes, String songName) {
+    public static void insertFingerprint(long[] hashes, String songName) {
         try {
             // connect to database
             Class.forName(DBConnection.DRIVER);
@@ -69,8 +72,8 @@ public class DBFingerprint {
             // insert hashes
             logger.log(Level.INFO, "Inserting hashes for song " + songName + " (id: " + id + ") in DB...");
             st.executeUpdate("LOCK TABLES HASHES WRITE;");
-            for(String hash : hashes) {
-                st.executeUpdate("INSERT INTO HASHES (HASH_, SONG_ID) VALUES ('" + hash + "'," + id +");");
+            for(long hash : hashes) {
+                st.executeUpdate("INSERT INTO HASHES (HASH_, SONG_ID) VALUES (" + hash + "," + id +");");
             }
             st.executeUpdate("UNLOCK TABLES");
             logger.log(Level.INFO, "Done inserting hashes for song " + songName + " (id: " + id + ") in DB!");
@@ -86,9 +89,17 @@ public class DBFingerprint {
      * @param hashes
      * @return
      */
-    public static String lookForMatches(String[] hashes) {
+    public static String lookForMatches(long[] hashes, boolean isMic) {
         HashMap<Integer, Integer> map = new HashMap<>();
 
+        // calculate the minimum matches required based on hash size, and whether its mic or not
+        int toleranceFactor = 12;
+        if(isMic) toleranceFactor = 24;
+        int hashesPerZone = MyTargetZone.ZONE_SIZE/MyTargetZone.NUM_POINTS;
+        int numKeyPoints = hashes.length / hashesPerZone;
+        int minimumMatches = numKeyPoints/(MyTargetZone.NUM_POINTS * toleranceFactor);
+        if(!isMic && minimumMatches < 4) minimumMatches = 4;
+        System.out.println("Minimum matches required: " + minimumMatches);
         synchronized (DBFingerprint.class) {
             try {
                 // connect to database
@@ -99,18 +110,27 @@ public class DBFingerprint {
                 Statement st = connection.createStatement();
                 int id;
 
-                for (String hash : hashes) {
-                    ResultSet set = st.executeQuery("SELECT SONG_ID FROM HASHES WHERE HASH_ = '" + hash + "';");
-                    while (set.next()) {
+                System.out.print("matched with: ");
+                for (long hash : hashes) {
+                    ResultSet set = st.executeQuery("SELECT SONG_ID FROM HASHES WHERE HASH_ = " + hash + ";");
+                    while (set != null && set.next()) {
                         id = set.getInt(1);
                         System.out.print(id + " ");
                         if (map.containsKey(id)) {
                             map.put(id, map.get(id) + 1);
+                            if(map.get(id) > minimumMatches) {
+                                ResultSet sett = st.executeQuery("SELECT TITLE FROM SONGS WHERE ID_SONG = " + id + ";");
+                                while (sett.next()) {
+                                    return sett.getString(1);
+                                }
+                            }
                         } else {
                             map.put(id, 1);
                         }
                     }
                 }
+
+                System.out.println("\n");
 
                 // find the most matched song
                 int max = 0;
@@ -124,7 +144,7 @@ public class DBFingerprint {
 
                 // get its name
                 String result = "";
-                if (bestMatchId != 0 && map.get(bestMatchId) > 4) {
+                if (bestMatchId != 0 && map.get(bestMatchId) > minimumMatches) {
                     ResultSet set = st.executeQuery("SELECT TITLE FROM SONGS WHERE ID_SONG = " + bestMatchId + ";");
                     while (set.next()) {
                         result = set.getString(1);
