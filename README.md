@@ -2,7 +2,7 @@
 <p> 
 &emsp;  I have attempted to recreate the functionality of the infamous 'Shazam' app. For those who don't know,
 it is an app used to recognize audio. It has a database of millions of precomputed songs and it takes just seconds
-to match the crappy audio from your phone's microphone while bypassing side noise in a matter of seconds! It is
+to match the crappy audio from your phone's microphone while bypassing side noise! It is
 like magic! 
 </p>
 <p>
