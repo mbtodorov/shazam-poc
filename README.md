@@ -74,11 +74,9 @@ using the exact same algorithm as for the stereo to mono conversion, but twice.
 &emsp; I used a FFT algorithm which works with doubles rather than the domain of complex numbers. The results
 give me a 2D double array, where the first dimension is ~100ms from the song, the second dimension is a frequency bin between 0 and 512 (each bin is 10.76Hz) and the value 
 is the amplitude. The spectrogram can be displayed by clicking the song button of the song (for testing purposes).
-
+###### &emsp;Spectrogram_ of the note C4 played on a piano: 
 <p align = "center">
 <img src = https://user-images.githubusercontent.com/25320807/59928509-97b01900-9447-11e9-9280-fab0955edeee.jpg>
-
-Spectrogram_ of the note C4 played on a piano 
 
 </p>
 
