@@ -27,8 +27,8 @@ public class MicListener extends Task<String> {
     private static final String MATCH_FOUND, MATCH_NOT_FOUND, LINE_NOT_SUPPORTED;
     static {
         logger = Logger.getLogger(MicListener.class.getName());
-        LISTENING_DURATION = 5; // How many times it will get X seconds of mic input
-        EXTRACT_LENGTH = 5000; // The mic input duration in seconds
+        LISTENING_DURATION = 3; // How many times it will get X seconds of mic input
+        EXTRACT_LENGTH = 10000; // The mic input duration in seconds
         MATCH_FOUND = "This is: ";
         MATCH_NOT_FOUND = "No match found. Try again.";
         LINE_NOT_SUPPORTED = "Line not supported.";
@@ -106,7 +106,7 @@ public class MicListener extends Task<String> {
                 micMatcher.setOnSucceeded(e -> setMatchedSong(micMatcher.getValue()));
 
                 // submit to thread pool
-                executor.execute(new Thread(micMatcher));
+                if(!executor.isShutdown()) executor.execute(new Thread(micMatcher));
 
                 // stop receiving input
                 line.stop();
@@ -135,7 +135,7 @@ public class MicListener extends Task<String> {
             }
         }
         catch (Exception e) {
-            return e.getMessage(); // the exception will be displayed in the label
+            return e.toString(); // the exception will be displayed in the label
         }
 
         // if we get to here there was no match found
@@ -152,6 +152,7 @@ public class MicListener extends Task<String> {
     private void setMatchedSong(String song) {
         // the task will return null if there was no match found
         if(song != null) {
+            executor.shutdown();
             // there was a match - no need to start new
             // tasks anymore - shutdown thread pool
             executor.shutdownNow();

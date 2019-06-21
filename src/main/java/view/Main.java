@@ -255,13 +255,13 @@ public class Main extends Application {
 
             // add btn to grid
             songGrid.getChildren().add(songBtn);
-
+        } else {
             // add a label indicating that there are more songs
             // but they can't be displayed
             if(songGrid.getChildren().size() == 5) {
                 songGrid.getChildren().add(new Label("..."));
             }
-        } else {
+
             // decode the song, without displaying it, in case it hasn't
             // been fingerprinted in the DB yet.
             DecodeThread decodeThread = new DecodeThread(song);
@@ -418,7 +418,7 @@ public class Main extends Application {
         Stage newStage = new Stage();
         newStage.setScene(newScene);
         newStage.setTitle(song);
-        newStage.getIcons().add(new Image(Main.class.getResourceAsStream("./style/icon.png")));
+        newStage.getIcons().add(new Image(Main.class.getResourceAsStream("./style/icon.ico")));
         newStage.show();
     }
 

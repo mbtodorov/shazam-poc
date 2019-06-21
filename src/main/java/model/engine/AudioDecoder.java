@@ -4,9 +4,14 @@ import main.java.model.db.DBFingerprint;
 import main.java.model.db.DBUtils;
 import main.java.model.engine.datastructures.KeyPoint;
 
+import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -202,7 +207,7 @@ public class AudioDecoder {
 
         String result = DBFingerprint.lookForMatches(hashes, isMic);
 
-        /* Uncomment to test
+/* uncomment for testing
         try {
             // retrieve image
             BufferedImage bi = drawSpectrogram(FFTResults);
@@ -213,12 +218,14 @@ public class AudioDecoder {
             File out = new File("keypoints" + Thread.currentThread().getName() + ".png");
             ImageIO.write(kp, "png", out);
 
-            AudioUtils.writeWavToSystem(decodedAudio, "mic" + Thread.currentThread().getName())
+            AudioUtils.writeWavToSystem(decodedAudio, "mic" + Thread.currentThread().getName());
 
         } catch (IOException e) {
 
-        } */
+        }
 
+
+ */
         // log time taken
         long end = System.currentTimeMillis();
         logger.log(Level.INFO, "Time taken to decode input stream: " + (end-start) + "ms");
@@ -261,7 +268,7 @@ public class AudioDecoder {
                 frameRate, false);
     }
 
-    /* Uncomment to test
+
     private static BufferedImage drawSpectrogram(double[][] points) {
 
         BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
@@ -279,16 +286,50 @@ public class AudioDecoder {
         return theImage;
     }
 
-    private static BufferedImage drawKeyPoints(double[][] points) {
-        // get the keypoints
-        KeyPoint[] keyPoints = AudioFingerprint.extractKeyPoints(points);
-        BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
+    private static BufferedImage drawKeyPoints(double[][]points) {
+        // init the result image
+        BufferedImage result = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
 
+        // color everything white
         for (int x = 0; x < points.length; x++) {
             for (int y = 0; y < points[x].length; y++) {
                 Color white = Color.WHITE;
-                theImage.setRGB(x, y, white.getRGB());
+                result.setRGB(x, y, white.getRGB());
             }
+        }
+
+        // paint red lines for each logarithmic band
+        Color red = Color.RED;
+        for(int i = 0; i < points.length; i ++) {
+            result.setRGB(i, 501, red.getRGB());
+            result.setRGB(i, 502, red.getRGB());
+            result.setRGB(i, 491, red.getRGB());
+            result.setRGB(i, 492, red.getRGB());
+            result.setRGB(i, 471, red.getRGB());
+            result.setRGB(i, 472, red.getRGB());
+            result.setRGB(i, 431, red.getRGB());
+            result.setRGB(i, 432, red.getRGB());
+            result.setRGB(i, 351, red.getRGB());
+            result.setRGB(i, 352, red.getRGB());
+            result.setRGB(i, 191, red.getRGB());
+            result.setRGB(i, 192, red.getRGB());
+        }
+
+        // get the keypoints
+        KeyPoint[][] keyPoints2D = AudioFingerprint.extractKeyPoints(points);
+
+        // convert to single dimension array
+        ArrayList<KeyPoint> keyPointsList = new ArrayList<>();
+        for (KeyPoint[] value : keyPoints2D) {
+            keyPointsList.addAll(Arrays.asList(value));
+        }
+
+        KeyPoint[] keyPoints = keyPointsList.toArray(new KeyPoint[0]);
+
+        // reverse the frequencies of the points
+        // because the image has the y coordinate going down
+        for(KeyPoint kp : keyPoints) {
+            kp.setFrequency(511 - kp.getFrequency());
         }
 
         for(KeyPoint kp : keyPoints) {
@@ -306,18 +347,61 @@ public class AudioDecoder {
             for(int i = xFloor; i < xCeil; i ++ ) { //iterate and paint square around point
                 for(int j = yFloor; j < yCeil; j ++) {
                     Color black = Color.BLACK;
-                    theImage.setRGB(i, j, black.getRGB());
+                    result.setRGB(i, j, black.getRGB());
                 }
             }
         }
-        return theImage;
+
+        /* -- Uncomment to only paint a pixel, not an entire square
+        // paint a black point for each keypoint
+        for(KeyPoint kp : keyPoints) {
+            int x = kp.getTime();
+            int y = kp.getFrequency();
+            Color black = Color.BLACK;
+            result.setRGB(x, y, black.getRGB());
+        }
+         */
+
+
+        // resize to fit screen better
+        result = resize(result);
+        return result;
     }
 
+
+    /**
+     * A method to resize a buffered image to 800(w) by 300(h)
+     *
+     * @param img the image to be resized
+     * @return the resized image
+     */
+    private static BufferedImage resize(BufferedImage img) {
+        int width = img.getWidth();
+        if(width > 800) {
+            width = 800;
+        }
+        Image tmp = img.getScaledInstance(width, 300, Image.SCALE_SMOOTH);
+        BufferedImage result = new BufferedImage(width, 300, BufferedImage.TYPE_INT_ARGB);
+
+        Graphics2D g2d = result.createGraphics();
+        g2d.drawImage(tmp, 0, 0, null);
+        g2d.dispose();
+
+        return result;
+    }
+
+    /**
+     * A method to get a color based on the intensity of the
+     * amplitude
+     *
+     * @param power the intensity
+     * @return the color
+     */
     private static Color getColor(double power) {
         double H = power * 0.3; // Hue
         double S = 1.0; // Saturation
         double B = 1.0; // Brightness
 
         return Color.getHSBColor((float) H, (float) S, (float) B);
-    }*/
+    }
 }

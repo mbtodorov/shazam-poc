@@ -97,12 +97,14 @@ public class DBFingerprint {
 
         // calculate the minimum matches required based on hash size, and whether its mic or not
         int toleranceFactor = 20;
-        if(isMic) toleranceFactor = 24;
+        if(isMic) toleranceFactor = 30;
         int hashesPerZone = MyTargetZone.ZONE_SIZE/MyTargetZone.NUM_POINTS;
         int numKeyPoints = hashes.length / hashesPerZone;
         int minimumMatches = numKeyPoints/(MyTargetZone.NUM_POINTS * toleranceFactor);
         if(!isMic && minimumMatches < 5) minimumMatches = 5;
+        if(isMic && minimumMatches < 3) minimumMatches = 3;
         if(minimumMatches > 20) minimumMatches = 20;
+        if(isMic && minimumMatches > 10) minimumMatches = 10;
         System.out.println("Minimum matches required: " + minimumMatches);
         synchronized (DBFingerprint.class) {
             try {
