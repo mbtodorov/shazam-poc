@@ -77,8 +77,11 @@ is the amplitude. The spectrogram can be displayed by clicking the song button o
 
 <p align = "center">
 <img src = https://user-images.githubusercontent.com/25320807/59928509-97b01900-9447-11e9-9280-fab0955edeee.jpg>
+
+Spectrogram_ of the note C4 played on a piano 
+
 </p>
-_Spectrogram_ of the note C4 played on a piano 
+
 
 * #### Extract key points from FFT result
 &emsp; The result of the FFT is essentially my spectrogram. From it, I extract key-points. The algorithm aims to
