@@ -268,7 +268,7 @@ public class AudioDecoder {
                 frameRate, false);
     }
 
-
+/* uncomment for testing
     private static BufferedImage drawSpectrogram(double[][] points) {
 
         BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
@@ -351,30 +351,11 @@ public class AudioDecoder {
                 }
             }
         }
-
-        /* -- Uncomment to only paint a pixel, not an entire square
-        // paint a black point for each keypoint
-        for(KeyPoint kp : keyPoints) {
-            int x = kp.getTime();
-            int y = kp.getFrequency();
-            Color black = Color.BLACK;
-            result.setRGB(x, y, black.getRGB());
-        }
-         */
-
-
-        // resize to fit screen better
+/*
         result = resize(result);
         return result;
     }
-
-
-    /**
-     * A method to resize a buffered image to 800(w) by 300(h)
-     *
-     * @param img the image to be resized
-     * @return the resized image
-     */
+*//*
     private static BufferedImage resize(BufferedImage img) {
         int width = img.getWidth();
         if(width > 800) {
@@ -390,13 +371,7 @@ public class AudioDecoder {
         return result;
     }
 
-    /**
-     * A method to get a color based on the intensity of the
-     * amplitude
-     *
-     * @param power the intensity
-     * @return the color
-     */
+
     private static Color getColor(double power) {
         double H = power * 0.3; // Hue
         double S = 1.0; // Saturation
@@ -404,4 +379,7 @@ public class AudioDecoder {
 
         return Color.getHSBColor((float) H, (float) S, (float) B);
     }
+
+    */
 }
+
