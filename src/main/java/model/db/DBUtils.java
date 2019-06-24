@@ -15,6 +15,7 @@ import java.util.logging.Logger;
  * @version 1.0
  * @author Martin Todorov
  */
+@SuppressWarnings("ConstantConditions")
 public class DBUtils {
     // logger
     private static final Logger logger = Logger.getLogger(DBUtils.class.getName());
@@ -26,16 +27,19 @@ public class DBUtils {
      * @return true if the connection was successful and false if it wasn't
      */
     public static boolean checkConnection() {
+        Connection connection = null;
         try {
             logger.log(Level.INFO, "Checking connection to database...");
             Class.forName(DBConnection.DRIVER);
             //noinspection unused
-            Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
+            connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
         } catch (Exception e) {
             // throwing an exception would mean unsuccessful connection
             logger.log(Level.SEVERE, "Unable to connect to database! Exiting...");
             System.exit(-1);
             return false;
+        } finally {
+            try { connection.close(); } catch (Exception e) { /* ignored */ }
         }
         logger.log(Level.INFO, "Connection OK!");
         return true;
@@ -48,24 +52,29 @@ public class DBUtils {
     public static void initDB() {
         logger.log(Level.INFO, "No schema found in database. Creating schema...");
 
+        Connection connection = null;
+        Statement st = null;
+
         try {
             // connect to the database
             Class.forName(DBConnection.DRIVER);
-            Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
+            connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
 
             // create statement
-            Statement statement = connection.createStatement();
+            st = connection.createStatement();
 
-            statement.executeUpdate("CREATE TABLE SONGS (ID_SONG INT(11) NOT NULL " +
+            st.executeUpdate("CREATE TABLE SONGS (ID_SONG INT(11) NOT NULL " +
                     "AUTO_INCREMENT,TITLE VARCHAR(60) NOT NULL, PRIMARY KEY (ID_SONG));");
-            statement.executeUpdate("CREATE TABLE HASHES (HASH_ BIGINT NOT NULL, " +
+            st.executeUpdate("CREATE TABLE HASHES (HASH_ BIGINT NOT NULL, " +
                     "SONG_ID INT(11) NOT NULL);");
-            statement.executeUpdate("ALTER TABLE HASHES ADD CONSTRAINT VALID FOREIGN KEY (SONG_ID) " +
+            st.executeUpdate("ALTER TABLE HASHES ADD CONSTRAINT VALID FOREIGN KEY (SONG_ID) " +
                     "REFERENCES SONGS (ID_SONG) ON DELETE CASCADE ON UPDATE CASCADE; ");
 
-            statement.close();
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Exception thrown while creating schema: \n" + e.toString());
+        } finally {
+            try { st.close(); } catch (Exception e) { /* ignored */ }
+            try { connection.close(); } catch (Exception e) { /* ignored */ }
         }
 
         logger.log(Level.INFO, "Successfully created schema!");
@@ -78,20 +87,29 @@ public class DBUtils {
      * @return true if the schema has been created and false if it hasn't
      */
     public static boolean existsDB() {
+
+        Connection connection = null;
+        Statement st = null;
+        ResultSet set = null;
+
         try {
             // connect to database
             Class.forName(DBConnection.DRIVER);
-            Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
+            connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
 
             // dummy query to check if schema is created
-            Statement st = connection.createStatement();
+            st = connection.createStatement();
             //noinspection unused
-            ResultSet set = st.executeQuery("SELECT * FROM SONGS;");
+            set = st.executeQuery("SELECT * FROM SONGS;");
 
         } catch (Exception e) {
             // throwing an exception means that the query cant find that table
             // i.e the schema hasn't been created
             return false;
+        } finally {
+            try { set.close(); } catch (Exception e) { /* ignored */ }
+            try { st.close(); } catch (Exception e) { /* ignored */ }
+            try { connection.close(); } catch (Exception e) { /* ignored */ }
         }
         return true;
     }
@@ -125,22 +143,32 @@ public class DBUtils {
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean isSongInDB(String song) {
         boolean result = true;
+
+        Connection connection = null;
+        Statement st = null;
+        ResultSet count = null;
+
         try {
             // connect to database
             Class.forName(DBConnection.DRIVER);
-            Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
+            connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
 
             //init statement
-            Statement st = connection.createStatement();
+            st = connection.createStatement();
 
             // check if there is a song with the same name in the DB
-            ResultSet count = st.executeQuery("SELECT COUNT(*) FROM SONGS WHERE TITLE = '" + song + "';");
+            count = st.executeQuery("SELECT COUNT(*) FROM SONGS WHERE TITLE = '" + song + "';");
+
             while (count.next()) {
                 result = (count.getInt(1) == 1);
             }
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Exception thrown while checking if " + song + " is in DB. \n" + e.toString());
+        } finally {
+            try { count.close(); } catch (Exception e) { /* ignored */ }
+            try { st.close(); } catch (Exception e) { /* ignored */ }
+            try { connection.close(); } catch (Exception e) { /* ignored */ }
         }
 
         return result;

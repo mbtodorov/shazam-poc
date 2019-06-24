@@ -17,6 +17,7 @@ import java.util.logging.Logger;
  * @version 1.0
  * @author Martin Todorov
  */
+@SuppressWarnings("ConstantConditions")
 public class DBFingerprint {
     // logger
     private static final Logger logger = Logger.getLogger(DBFingerprint.class.getName());
@@ -28,13 +29,15 @@ public class DBFingerprint {
      * @param song the TITLE of the new entry in the SONGS TABLE
      */
     public static void initSongInDB(String song) {
+        Connection connection = null;
+        Statement st = null;
         try {
             // connect to database
             Class.forName(DBConnection.DRIVER);
-            Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
+            connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
 
             // create a statement
-            Statement st = connection.createStatement();
+            st = connection.createStatement();
 
             // insert the song in the database
             st.executeUpdate("LOCK TABLES SONGS WRITE;");
@@ -43,6 +46,9 @@ public class DBFingerprint {
             logger.log(Level.INFO, "Inserted song in database: " + song);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Exception thrown while trying to insert song " + song + ": \n" + e.toString());
+        } finally {
+            try { st.close(); } catch (Exception e) { /* ignored */ }
+            try { connection.close(); } catch (Exception e) { /* ignored */ }
         }
     }
 
@@ -54,16 +60,20 @@ public class DBFingerprint {
      * @param songName the source of the fingerprints
      */
     public static void insertFingerprint(long[] hashes, String songName) {
+        Connection connection = null;
+        Statement st = null;
+        ResultSet set = null;
+
         try {
             // connect to database
             Class.forName(DBConnection.DRIVER);
-            Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
+            connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
 
             // create a statement
-            Statement st = connection.createStatement();
+            st = connection.createStatement();
 
             // get the ID of the song
-            ResultSet set = st.executeQuery("SELECT ID_SONG FROM SONGS WHERE TITLE = '" + songName + "'");
+            set = st.executeQuery("SELECT ID_SONG FROM SONGS WHERE TITLE = '" + songName + "'");
             int id = 0;
             while(set.next()) {
                 id = set.getInt(1);
@@ -80,6 +90,10 @@ public class DBFingerprint {
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Exception thrown while inserting fingerprint " + e);
+        } finally {
+            try { set.close(); } catch (Exception e) { /* ignored */ }
+            try { st.close(); } catch (Exception e) { /* ignored */ }
+            try { connection.close(); } catch (Exception e) { /* ignored */ }
         }
     }
 
@@ -106,26 +120,32 @@ public class DBFingerprint {
         if(minimumMatches > 20) minimumMatches = 20;
         if(isMic && minimumMatches > 10) minimumMatches = 10;
         System.out.println("Minimum matches required: " + minimumMatches);
+
+        Connection connection = null;
+        Statement st = null;
+        ResultSet set = null;
+        ResultSet sett = null;
+
         synchronized (DBFingerprint.class) {
             try {
                 // connect to database
                 Class.forName(DBConnection.DRIVER);
-                Connection connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
+                connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
 
                 // create a statement
-                Statement st = connection.createStatement();
+                st = connection.createStatement();
                 int id;
 
                 System.out.print("matched with: ");
                 for (long hash : hashes) {
-                    ResultSet set = st.executeQuery("SELECT SONG_ID FROM HASHES WHERE HASH_ = " + hash + ";");
+                    set = st.executeQuery("SELECT SONG_ID FROM HASHES WHERE HASH_ = " + hash + ";");
                     while (set != null && set.next()) {
                         id = set.getInt(1);
                         System.out.print(id + " ");
                         if (map.containsKey(id)) {
                             map.put(id, map.get(id) + 1);
                             if(map.get(id) >= minimumMatches) {
-                                ResultSet sett = st.executeQuery("SELECT TITLE FROM SONGS WHERE ID_SONG = " + id + ";");
+                                sett = st.executeQuery("SELECT TITLE FROM SONGS WHERE ID_SONG = " + id + ";");
                                 sett.next();
                                 return sett.getString(1);
 
@@ -151,7 +171,7 @@ public class DBFingerprint {
                 // get its name
                 String result = "";
                 if (bestMatchId != 0 && map.get(bestMatchId) >= minimumMatches) {
-                    ResultSet set = st.executeQuery("SELECT TITLE FROM SONGS WHERE ID_SONG = " + bestMatchId + ";");
+                    set = st.executeQuery("SELECT TITLE FROM SONGS WHERE ID_SONG = " + bestMatchId + ";");
                     while (set.next()) {
                         result = set.getString(1);
                     }
@@ -161,6 +181,11 @@ public class DBFingerprint {
 
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Exception thrown while trying to find matches " + e );
+            } finally {
+                try { sett.close(); } catch (Exception e) { /* ignored */ }
+                try { set.close(); } catch (Exception e) { /* ignored */ }
+                try { st.close(); } catch (Exception e) { /* ignored */ }
+                try { connection.close(); } catch (Exception e) { /* ignored */ }
             }
         }
         return null;

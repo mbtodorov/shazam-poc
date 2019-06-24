@@ -239,7 +239,7 @@ public class Main extends Application {
      */
     private void populateGrid(String song) {
 
-        if(songGrid.getChildren().size() < 6) {
+        if(songGrid.getChildren().size() < 5) {
             // init the btn for the song
             SongBtn songBtn = new SongBtn(song);
 
