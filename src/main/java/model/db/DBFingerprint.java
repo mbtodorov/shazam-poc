@@ -110,7 +110,7 @@ public class DBFingerprint {
         HashMap<Integer, Integer> map = new HashMap<>();
 
         // calculate the minimum matches required based on hash size, and whether its mic or not
-        int toleranceFactor = 20;
+        int toleranceFactor = 18;
         if(isMic) toleranceFactor = 30;
         int hashesPerZone = MyTargetZone.ZONE_SIZE/MyTargetZone.NUM_POINTS;
         int numKeyPoints = hashes.length / hashesPerZone;
