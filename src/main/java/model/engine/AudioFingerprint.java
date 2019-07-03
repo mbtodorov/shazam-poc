@@ -4,8 +4,8 @@ import main.java.model.engine.datastructures.KeyPoint;
 import main.java.model.engine.datastructures.MyTargetZone;
 import main.java.model.engine.datastructures.TargetZone;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,24 +37,18 @@ public class AudioFingerprint {
         logger.log(Level.INFO, "Begin extracting key points from FFT result...");
 
         // extract keypoints from each of the 7 logarithmic bins
-        ArrayList<KeyPoint> bin1 = findPeaks(in, 0, 10, 10, 1.25, 0.8);
-        ArrayList<KeyPoint> bin2 = findPeaks(in, 10, 20, 12, 1.23, 0.75);
-        ArrayList<KeyPoint> bin3 = findPeaks(in, 20, 40, 14, 1.25, 0.7);
-        ArrayList<KeyPoint> bin4 = findPeaks(in, 40, 80, 16, 1.3, 0.7);
-        ArrayList<KeyPoint> bin5 = findPeaks(in, 80, 160, 18, 1.3, 0.74);
-        ArrayList<KeyPoint> bin6 = findPeaks(in, 160, 320, 18, 1.4, 0.7);
-        ArrayList<KeyPoint> bin7 = findPeaks(in, 320, 512, 20, 1.49, 0.68);
+        KeyPoint[] bin1 = findPeaks(in, 0, 10, 10, 1.25, 0.8);
+        KeyPoint[] bin2 = findPeaks(in, 10, 20, 12, 1.23, 0.75);
+        KeyPoint[] bin3 = findPeaks(in, 20, 40, 14, 1.25, 0.7);
+        KeyPoint[] bin4 = findPeaks(in, 40, 80, 16, 1.3, 0.7);
+        KeyPoint[] bin5 = findPeaks(in, 80, 160, 18, 1.3, 0.74);
+        KeyPoint[] bin6 = findPeaks(in, 160, 320, 18, 1.4, 0.7);
+        KeyPoint[] bin7 = findPeaks(in, 320, 512, 20, 1.49, 0.68);
 
         // convert to 2D array
-        KeyPoint[][] out = {bin1.toArray(new KeyPoint[0]),
-                            bin2.toArray(new KeyPoint[0]),
-                            bin3.toArray(new KeyPoint[0]),
-                            bin4.toArray(new KeyPoint[0]),
-                            bin5.toArray(new KeyPoint[0]),
-                            bin6.toArray(new KeyPoint[0]),
-                            bin7.toArray(new KeyPoint[0])};
+        KeyPoint[][] out = {bin1, bin2, bin3, bin4, bin5, bin6, bin7};
 
-        int total = bin1.size() + bin2.size() + bin3.size() + bin4.size() + bin5.size() + bin6.size() + bin7.size();
+        int total = bin1.length + bin2.length + bin3.length + bin4.length + bin5.length + bin6.length + bin7.length;
 
         logger.log(Level.INFO, "Done extracting keypoints from FFT result! (" + total + " total)");
         return out;
@@ -72,9 +66,9 @@ public class AudioFingerprint {
      * @param CONSTANT_FACTOR a constant coefficient (no frequencies below it will be accepted
      * @return an ArrayList containing all key points from the specified bin
      */
-    private static ArrayList<KeyPoint> findPeaks(double[][] in, int binFloor, int binCeil, int size,
+    private static KeyPoint[] findPeaks(double[][] in, int binFloor, int binCeil, int size,
                                                  double DEVIATION_FACTOR, double CONSTANT_FACTOR) {
-        ArrayList<KeyPoint> result = new ArrayList<>();
+        LinkedList<KeyPoint> result = new LinkedList<>();
         double sum = 0;
         int count = 0;
         double average;
@@ -104,7 +98,7 @@ public class AudioFingerprint {
             for(int j = i; j < i + size; j ++) {
                 for(int k = binFloor; k < binCeil; k ++) {
                     if(in[j][k] > average && in[j][k] > CONSTANT_FACTOR) {
-                        result.add(new KeyPoint(j, k));
+                        result.addLast(new KeyPoint(j, k));
                     }
                 }
             }
@@ -113,7 +107,7 @@ public class AudioFingerprint {
         logger.log(Level.INFO, "Done finding peaks in " + binFloor + " to " + binCeil +
                 "! (" + result.size() + " total)");
 
-        return result;
+        return result.toArray(new KeyPoint[0]);
     }
 
     /**
@@ -137,7 +131,7 @@ public class AudioFingerprint {
             keyPtsLen += bin.length;
         }
 
-        ArrayList<Long> resultList = new ArrayList<>();
+        LinkedList<Long> resultList = new LinkedList<>();
 
         logger.log(Level.INFO, "Begin hashing key points (" + keyPtsLen + " total)...");
 

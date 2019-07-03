@@ -1,5 +1,6 @@
 package main.java.view;
 
+import javafx.scene.text.Font;
 import main.java.model.concurrent.thread.DecodeThread;
 import main.java.model.concurrent.task.MicListener;
 import main.java.model.concurrent.task.FileMatcher;
@@ -239,7 +240,7 @@ public class Main extends Application {
      */
     private void populateGrid(String song) {
 
-        if(songGrid.getChildren().size() < 5) {
+        if(songGrid.getChildren().size() < 10) {
             // init the btn for the song
             SongBtn songBtn = new SongBtn(song);
 
@@ -258,7 +259,7 @@ public class Main extends Application {
         } else {
             // add a label indicating that there are more songs
             // but they can't be displayed
-            if(songGrid.getChildren().size() == 5) {
+            if(songGrid.getChildren().size() == 10) {
                 songGrid.getChildren().add(new Label("..."));
             }
 
@@ -312,10 +313,12 @@ public class Main extends Application {
      *
      * @param e the choose file button
      */
+    @SuppressWarnings("unused")
     private void chooseFile(ActionEvent e) {
         // file chooser for wav files only
         FileChooser.ExtensionFilter wavFilter = new FileChooser.ExtensionFilter("WAV Files", "*.wav");
         FileChooser wavChooser = new FileChooser();
+        wavChooser.setInitialDirectory(new File("music/teststreams"));
         wavChooser.getExtensionFilters().add(wavFilter);
         File input = wavChooser.showOpenDialog(stage);
 
@@ -340,8 +343,8 @@ public class Main extends Application {
 
                     // begin
                     new Thread(fileMatcher).start();
-                } catch (Exception xcc) {
-                    logger.log(Level.SEVERE, "Exception thrown while matching stream " + e);
+                } catch (Exception exc) {
+                    logger.log(Level.SEVERE, "Exception thrown while matching stream " + exc);
                 }
             } else { // audio file of unsupported format - alert
                 AudioFormat format = AudioDecoder.getSupportedFormat();

@@ -1,10 +1,3 @@
-/* ----------- FONTS ----------- */
-
-@font-face {
-    font-family: Roboto-Bold;
-    src: url("Roboto-Bold.ttf");
-}
-
 /* ----------- COLORS ----------- */
 
 *{
@@ -18,7 +11,6 @@
 
 .root {
     -fx-font-size: 14pt;
-    -fx-font-family: Roboto-Bold;
     -fx-background: primary-background-color;
 }
 
@@ -37,7 +29,6 @@
 .button, .toggle-button {
     -fx-background-color: primary-color;
     -fx-text-fill: primary-text-color;
-    -fx-font-family: Roboto-Bold;
     -fx-font-size: 14pt;
     -fx-font-weight: bold;
     -fx-background-radius: 5px;
@@ -60,7 +51,7 @@
 
 .toggle-btn {
     -fx-background-color: transparent;
-    -fx-font-weight: 500;
+    -fx-font-weight: 400;
     -fx-font-size: 12pt;
     -fx-padding: 0;
     -jfx-toggle-color: primary-color;
@@ -93,7 +84,6 @@
 /* ------------- LABELS --------------*/
 
 .label {
-    -fx-font-family: Roboto-Bold;
     -fx-text-fill: primary-text-color;
     -fx-font-size: 12pt;
 }

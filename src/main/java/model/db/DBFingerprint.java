@@ -90,10 +90,6 @@ public class DBFingerprint {
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Exception thrown while inserting fingerprint " + e);
-        } finally {
-            try { set.close(); } catch (Exception e) { /* ignored */ }
-            try { st.close(); } catch (Exception e) { /* ignored */ }
-            try { connection.close(); } catch (Exception e) { /* ignored */ }
         }
     }
 
