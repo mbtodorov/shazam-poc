@@ -102,7 +102,6 @@ public class Main extends Application {
             infoLbl.getStyleClass().add("info-label");
             infoLbl.setTextAlignment(TextAlignment.CENTER);
 
-            // the audio catalogue
             // the song catalogue
             SongCatalogue songCatalogue = new SongCatalogue();
 

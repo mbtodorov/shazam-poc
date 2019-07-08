@@ -48,6 +48,7 @@
     -jfx-disable-visual-focus: true;
 }
 
+/*noinspection SpellCheckingInspection*/
 .button:hover {
     -fx-cursor: hand;
     -fx-effect: dropshadow(gaussian, rgba(24, 24, 24, 0.5), 12, 0, 0, 4);
