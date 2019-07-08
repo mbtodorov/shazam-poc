@@ -29,6 +29,7 @@ public class DBFingerprint {
      * @param song the TITLE of the new entry in the SONGS TABLE
      */
     public static void initSongInDB(String song) {
+        song = song.substring(0, song.length() - 4);
         Connection connection = null;
         Statement st = null;
         try {
@@ -65,6 +66,7 @@ public class DBFingerprint {
      * @param songName the source of the fingerprints
      */
     public synchronized static void insertFingerprint(long[] hashes, String songName) {
+        songName = songName.substring(0, songName.length() -4);
         Connection connection = null;
         Statement st = null;
         ResultSet set = null;

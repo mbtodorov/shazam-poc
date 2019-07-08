@@ -157,7 +157,7 @@ public class DBUtils {
 
                 // add to array
                 while (rs.next()) {
-                    result[index] = rs.getString(1);
+                    result[index] = rs.getString(1) + ".wav";
                     index ++;
                 }
             }
