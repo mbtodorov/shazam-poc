@@ -1,17 +1,10 @@
 package main.java.model.engine;
 
 import main.java.model.db.DBFingerprint;
-import main.java.model.db.DBUtils;
 import main.java.model.engine.datastructures.KeyPoint;
 
-import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,30 +23,6 @@ public class AudioDecoder {
     private final static Logger logger = Logger.getLogger(AudioDecoder.class.getName());
 
     /**
-     * Scans for songs in {root dir}/music/*.wav
-     *
-     * @return a string array with all the songs' names;
-     */
-    public static String[] scanForSongs() {
-        File dir = new File("music");
-        File[] directoryListing = dir.listFiles();
-        ArrayList<String> songs = new ArrayList<>();
-
-        logger.log(Level.INFO, "Looking for songs in folder " + dir.getAbsolutePath());
-
-        assert directoryListing != null;
-        for(File file : directoryListing) {
-            if(file.getName().endsWith(".wav")) {
-                songs.add(file.getName());
-            }
-        }
-
-        logger.log(Level.INFO, "Done. Found " + songs.size() + " songs in "+ dir.getAbsolutePath());
-
-        return songs.toArray(new String[0]);
-    }
-
-    /**
      * Takes a file (wav) and undergoes a series of conversions:
      * low-pass filter for frequencies > 5000 hZ; down-sample to 11025 hZ;
      * convert to mono; hamming window function with size 1024; fft. Finally
@@ -61,13 +30,11 @@ public class AudioDecoder {
      * in the database already.
      *
      * @param songName the file to decode
+     * @param isInDB whether it is in the DB already or not
      * @return FFT result for drawing spectrogram
      */
-    public static double[][] decodeWav(String songName) {
+    public static double[][] decodeWav(String songName, boolean isInDB) {
         long start = System.currentTimeMillis(); // used for logging speed of algorithm
-
-        // This will be needed to determine which part of the algorithm needs to be executed
-        boolean withHashing = !DBUtils.isSongInDB(songName);
 
         // get the song
         File song = new File("music/" + songName);
@@ -105,9 +72,9 @@ public class AudioDecoder {
         double[][] FFTResults = AudioUtils.applyFFT(finalAudio);
 
         // The next part of the algorithm is executed only if the song is not already
-        // hashed in the database, as it is a long process to undergo for every app launch.
+        // hashed in the database. That is when this algorithm is called for drawing the spectrogram only
 
-        if(withHashing) { // The algorithm for populating DB with hashes
+        if(!isInDB) { // The algorithm for populating DB with hashes
 
             // Step 1: Extract only the key points from the FFT results
 
@@ -128,7 +95,7 @@ public class AudioDecoder {
 
         // log time taken
         long end = System.currentTimeMillis();
-        logger.log(Level.INFO, "Time taken to decodeWav song (with hashing: " + withHashing + "): " + song.getName() + ": " + (end-start) + "ms");
+        logger.log(Level.INFO, "Time taken to decodeWav song (with hashing: " + !isInDB + "): " + song.getName() + ": " + (end-start) + "ms");
 
         // return double[][] for spectrogram visualization
         return FFTResults;
@@ -165,67 +132,39 @@ public class AudioDecoder {
             logger.log(Level.SEVERE, e.getMessage());
         }
 
-        // an array to store the final raw file
-        byte[] decodedAudio;
+        // Step 2 : convert to mono if its not from mic
 
-        // Step 2: Process raw file (if necessary)
-        // The algorithm needs to do more computation if the source is not a microphone.
+        byte[] audioMono = audio;
 
         if(!isMic) {
-
-            // Step 1 : convert stereo to mono
-
-            byte[] audioMono = AudioUtils.convertToMono(audio);
-
-            // Step 2: down sample audio file to 44.1/4 = 11 025 Hz
-
-            decodedAudio = AudioUtils.downSample(audioMono);
-
-        } else {
-            // if the source is a microphone there is no extra computation needed
-            decodedAudio = audio;
+            // Convert stereo to mono
+            audioMono = AudioUtils.convertToMono(audio);
         }
 
-        // Step 3: convert the byte[] raw audio to double[] raw audio
+        // Step 3 : down sample to 11025 Hz
 
-        assert decodedAudio != null;
+        byte[] decodedAudio = AudioUtils.downSample(audioMono);
+
+        // Step 4: convert the byte[] raw audio to double[] raw audio
+
         double[] finalAudio = AudioUtils.byteToDoubleArr(decodedAudio);
 
-        // Step 4: apply FFT to the double[] to get the point data needed for extracting key points
+        // Step 5: apply FFT to the double[] to get the point data needed for extracting key points
 
         double[][] FFTResults = AudioUtils.applyFFT(finalAudio);
 
-        // Step 5: extract key points from FFT result
+        // Step 6: extract key points from FFT result
 
         KeyPoint[][] keyPoints = AudioFingerprint.extractKeyPoints(FFTResults);
 
-        // Step 6: Extract ALL possible hashes from the keypoints
+        // Step 7: Extract ALL possible hashes from the keypoints
 
         long[] hashes = AudioFingerprint.hash(keyPoints, true);
 
-        // Step 7: look for matching fingerprints in DB.
+        // Step 8: look for matching fingerprints in DB.
 
         String result = DBFingerprint.lookForMatches(hashes, isMic);
 
-/* uncomment for testing
-        try {
-            // retrieve image
-            BufferedImage bi = drawSpectrogram(FFTResults);
-            File outputFile = new File("spectrogram" + Thread.currentThread().getName() + ".png");
-            ImageIO.write(bi, "png", outputFile);
-
-            BufferedImage kp = drawKeyPoints(FFTResults);
-            File out = new File("keypoints" + Thread.currentThread().getName() + ".png");
-            ImageIO.write(kp, "png", out);
-
-            AudioUtils.writeWavToSystem(decodedAudio, "mic" + Thread.currentThread().getName());
-
-        } catch (IOException e) {
-
-        }
-
-
- */
         // log time taken
         long end = System.currentTimeMillis();
         logger.log(Level.INFO, "Time taken to decode input stream: " + (end-start) + "ms");
@@ -267,119 +206,5 @@ public class AudioDecoder {
         return new AudioFormat(encoding, sampleRate, sampleSizeInBits, channels, frameSize,
                 frameRate, false);
     }
-
-/* uncomment for testing
-    private static BufferedImage drawSpectrogram(double[][] points) {
-
-        BufferedImage theImage = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
-        double ratio;
-
-        //iterate and paint based on frequency amplitude
-        for (int x = 0; x < points.length; x++) {
-            for (int y = 0; y < points[x].length; y++) {
-                ratio = points[x][y];
-                Color newColor = getColor(1.0 - ratio);
-                theImage.setRGB(x, y, newColor.getRGB());
-            }
-        }
-
-        return theImage;
-    }
-
-    private static BufferedImage drawKeyPoints(double[][]points) {
-        // init the result image
-        BufferedImage result = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
-
-        // color everything white
-        for (int x = 0; x < points.length; x++) {
-            for (int y = 0; y < points[x].length; y++) {
-                Color white = Color.WHITE;
-                result.setRGB(x, y, white.getRGB());
-            }
-        }
-
-        // paint red lines for each logarithmic band
-        Color red = Color.RED;
-        for(int i = 0; i < points.length; i ++) {
-            result.setRGB(i, 501, red.getRGB());
-            result.setRGB(i, 502, red.getRGB());
-            result.setRGB(i, 491, red.getRGB());
-            result.setRGB(i, 492, red.getRGB());
-            result.setRGB(i, 471, red.getRGB());
-            result.setRGB(i, 472, red.getRGB());
-            result.setRGB(i, 431, red.getRGB());
-            result.setRGB(i, 432, red.getRGB());
-            result.setRGB(i, 351, red.getRGB());
-            result.setRGB(i, 352, red.getRGB());
-            result.setRGB(i, 191, red.getRGB());
-            result.setRGB(i, 192, red.getRGB());
-        }
-
-        // get the keypoints
-        KeyPoint[][] keyPoints2D = AudioFingerprint.extractKeyPoints(points);
-
-        // convert to single dimension array
-        ArrayList<KeyPoint> keyPointsList = new ArrayList<>();
-        for (KeyPoint[] value : keyPoints2D) {
-            keyPointsList.addAll(Arrays.asList(value));
-        }
-
-        KeyPoint[] keyPoints = keyPointsList.toArray(new KeyPoint[0]);
-
-        // reverse the frequencies of the points
-        // because the image has the y coordinate going down
-        for(KeyPoint kp : keyPoints) {
-            kp.setFrequency(511 - kp.getFrequency());
-        }
-
-        for(KeyPoint kp : keyPoints) {
-            int x = kp.getTime();
-            int y = kp.getFrequency();
-            int sqSize = 4;
-            int xFloor = x - sqSize;
-            if(xFloor < 0) xFloor = 0; // edge
-            int xCeil = x + sqSize;
-            if(xCeil > points.length) xCeil = points.length - 1; // edge
-            int yFloor = y - sqSize/2; // divide by 2 because of resize
-            if(yFloor < 0) yFloor = 0; // edge
-            int yCeil = y + sqSize/2; // divide by 2 because of resize
-            if(yCeil > points[0].length) yCeil = points[0].length - 1; // edge
-            for(int i = xFloor; i < xCeil; i ++ ) { //iterate and paint square around point
-                for(int j = yFloor; j < yCeil; j ++) {
-                    Color black = Color.BLACK;
-                    result.setRGB(i, j, black.getRGB());
-                }
-            }
-        }
-/*
-        result = resize(result);
-        return result;
-    }
-*//*
-    private static BufferedImage resize(BufferedImage img) {
-        int width = img.getWidth();
-        if(width > 800) {
-            width = 800;
-        }
-        Image tmp = img.getScaledInstance(width, 300, Image.SCALE_SMOOTH);
-        BufferedImage result = new BufferedImage(width, 300, BufferedImage.TYPE_INT_ARGB);
-
-        Graphics2D g2d = result.createGraphics();
-        g2d.drawImage(tmp, 0, 0, null);
-        g2d.dispose();
-
-        return result;
-    }
-
-
-    private static Color getColor(double power) {
-        double H = power * 0.3; // Hue
-        double S = 1.0; // Saturation
-        double B = 1.0; // Brightness
-
-        return Color.getHSBColor((float) H, (float) S, (float) B);
-    }
-
-    */
 }
 

@@ -1,7 +1,5 @@
 package main.java.view;
 
-import javafx.scene.text.Font;
-import main.java.model.concurrent.thread.DecodeThread;
 import main.java.model.concurrent.task.MicListener;
 import main.java.model.concurrent.task.FileMatcher;
 import main.java.model.db.DBUtils;
@@ -25,6 +23,7 @@ import javafx.event.ActionEvent;
 // material design controls
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXToggleButton;
+import main.java.view.audio.SongCatalogue;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -46,36 +45,24 @@ public class Main extends Application {
     // logger
     private final static Logger logger;
     // Strings used for the GUI
-    private static final String WIN_TITLE, BTN_COMPUTE, BTN_GO,
-                                LISTENING, COMPUTATION_DONE, NO_NEW_SONGS,
-                                NEW_SONGS, USE_INPUT_STREAM, CHOOSE_FILE,
+    private static final String WIN_TITLE,  BTN_GO,
+                                LISTENING, USE_INPUT_STREAM, CHOOSE_FILE,
                                 ALERT_ERROR, ALERT_NO_FILE, ALERT_UNSUPPORTED,
-                                COMPARING;
+                                COMPARING, INFO_LBL;
     static {
         logger = Logger.getLogger(Main.class.getName());
         WIN_TITLE = "Shazam PoC";
-        BTN_COMPUTE = "Compute";
         BTN_GO = "Go";
         LISTENING = "Listening...";
-        NO_NEW_SONGS = "All songs in the music dir are recognizable. \n 'Compute' will generate their spectrograms only.";
-        NEW_SONGS = " song(s) in the music dir which are not recognizable. \n 'Compute' will generate their " +
-                "fingerprints. ";
-        COMPUTATION_DONE = "The following songs are recognizable:";
-        USE_INPUT_STREAM = "Use input stream instead of mic.";
+        USE_INPUT_STREAM = "Use microphone instead.";
         CHOOSE_FILE = "Choose File";
         ALERT_ERROR = "Error!";
         ALERT_NO_FILE = "No file was selected. Try again.";
         ALERT_UNSUPPORTED = "The selected file's audio format is not supported. Supported format:";
         COMPARING = "Looking for a match...";
+        INFO_LBL = "Song Catalogue: ";
     }
 
-    // the songs in the music dir
-    private String[] songs;
-
-    // shows info for the user
-    private Label infoLbl;
-    // Displays names of all the songs found in the music dir
-    private VBox songGrid;
     // toggle button to switch between mic and input stream
     private ToggleButton useInputStream;
     // begins listening to the microphone
@@ -102,42 +89,22 @@ public class Main extends Application {
 
         // check database connection
         if(DBUtils.checkConnection()) {
-            // make sure there are songs in the music folder
-            this.songs = AudioDecoder.scanForSongs();
-            if (songs.length == 0) {
-                logger.log(Level.SEVERE, "No songs found in music dir. Exiting...");
-                System.exit(-1);
-            }
-
-            // check if the schema exists and create it if not
-            if (!DBUtils.existsDB()) DBUtils.initDB();
 
             // get the stage for resizing
             this.stage = stage;
 
-            // check if there are any songs which haven't been hashed
-            int newSongs = DBUtils.checkForNewSongs(songs);
+            // check if the schema exists and create it if not
+            if (!DBUtils.existsDB()) DBUtils.initDB();
 
-            // notify the user accordingly with a varying label text
-            if (newSongs != 0) {
-                infoLbl = new Label("There are " + newSongs + NEW_SONGS);
-            } else {
-                infoLbl = new Label(NO_NEW_SONGS);
-            }
-
+            // title label
+            Label infoLbl = new Label(INFO_LBL);
             infoLbl.setWrapText(true);
             infoLbl.getStyleClass().add("info-label");
             infoLbl.setTextAlignment(TextAlignment.CENTER);
 
-            // compute btn
-            Button computeBtn = new JFXButton(BTN_COMPUTE);
-            computeBtn.setOnAction(this::computeSongs);
-            computeBtn.getStyleClass().add("btn");
-
-            // grid for displaying all songs from music dir
-            songGrid = new VBox();
-            songGrid.setAlignment(Pos.CENTER);
-            songGrid.getStyleClass().add("song-grid");
+            // the audio catalogue
+            // the song catalogue
+            SongCatalogue songCatalogue = new SongCatalogue();
 
             // toggle between input stream and microphone
             useInputStream = new JFXToggleButton();
@@ -155,8 +122,6 @@ public class Main extends Application {
             chooseFile.setOnAction(this::chooseFile);
             chooseFile.getStyleClass().add("btn");
 
-            if (newSongs != 0) enableMatching(false); // disable if there are new songs
-
             // label to display match status
             matchLbl = new Label();
             matchLbl.setWrapText(true);
@@ -164,7 +129,7 @@ public class Main extends Application {
 
             // root pane
             root = new VBox();
-            root.getChildren().addAll(infoLbl, computeBtn, useInputStream, goBtn);
+            root.getChildren().addAll(infoLbl, songCatalogue, useInputStream, chooseFile);
             root.setAlignment(Pos.CENTER);
             root.getStyleClass().add("root-pane");
 
@@ -175,8 +140,8 @@ public class Main extends Application {
             stage.setTitle(WIN_TITLE);
             stage.setScene(scene);
             stage.show();
-            stage.sizeToScene();
-            stage.getIcons().add(new Image(Main.class.getResourceAsStream("./style/icon.ico")));
+            stage.setMinWidth(600);
+            stage.getIcons().add(new Image(Main.class.getResourceAsStream("./img/icon.ico")));
             stage.setOnCloseRequest(e -> Platform.exit());
 
             logger.log(Level.INFO, "Successfully launched application!");
@@ -190,84 +155,6 @@ public class Main extends Application {
      */
     public static void main(String[] args) {
         launch(args);
-    }
-
-    /**
-     * This method iterated through all the song found in the music dir
-     * and calls the decodeWav() method on them. The chained method will cross reference
-     * the database and handle everything else. If the song is new, a fingerprint will be extracted.
-     * If not, the computation will only get the FFTResults required for illustrating a spectrogram.
-     * More information can be found in GUI labels and comments in the AudioDecoder class.
-     *
-     * @param e btn
-     */
-    private void computeSongs(ActionEvent e) {
-        logger.log(Level.INFO, "Iterating through songs (only .wav) found... (" + songs.length + " total)");
-
-        // remove the button - not needed anymore
-        Button btn = (Button) e.getSource();
-        root.getChildren().remove(btn);
-
-        // add the grid to contain songs as the 2nd child of the root
-        root.getChildren().add(1, songGrid);
-
-        // iterate through songs
-        for (String song : songs) {
-            logger.log(Level.INFO, "Decoding song " + song);
-
-            populateGrid(song); // calls computation on the song
-        }
-
-        // update label
-        infoLbl.setText(COMPUTATION_DONE);
-
-        // enable matching if it was disabled
-        enableMatching(true);
-
-        // resize
-        stage.sizeToScene();
-    }
-
-    /**
-     * A method to add a song (.wav) to be displayed in the
-     * songGrid GUI element. Each song is represented with a SongBtn class,
-     * which stores the result of the FFT on the raw audio file and uses it to
-     * draw a spectrogram when clicked. Computation of each song will be started in a
-     * new thread. More information can be found in the thread class. The grid can not
-     * display > 5 songs.
-     *
-     * @param song the song to be decoded
-     */
-    private void populateGrid(String song) {
-
-        if(songGrid.getChildren().size() < 10) {
-            // init the btn for the song
-            SongBtn songBtn = new SongBtn(song);
-
-            // start the computation in a new thread
-            // a reference is passed so the FFT result can be assigned when computation is done
-            DecodeThread decodeThread = new DecodeThread(songBtn);
-            decodeThread.start();
-
-            // action handler & other
-            songBtn.setOnAction(this::showSpectrogram);
-            songBtn.getStyleClass().add("song-btn");
-            songBtn.setWrapText(true);
-
-            // add btn to grid
-            songGrid.getChildren().add(songBtn);
-        } else {
-            // add a label indicating that there are more songs
-            // but they can't be displayed
-            if(songGrid.getChildren().size() == 10) {
-                songGrid.getChildren().add(new Label("..."));
-            }
-
-            // decode the song, without displaying it, in case it hasn't
-            // been fingerprinted in the DB yet.
-            DecodeThread decodeThread = new DecodeThread(song);
-            decodeThread.start();
-        }
     }
 
     /**
@@ -389,7 +276,7 @@ public class Main extends Application {
 
         root.getChildren().remove(matchLbl);
 
-        if(isSelected) {
+        if(!isSelected) {
             root.getChildren().remove(goBtn);
             root.getChildren().add(chooseFile);
         } else {
@@ -401,28 +288,6 @@ public class Main extends Application {
 
         // resize
         stage.sizeToScene();
-    }
-
-    /**
-     * Method to display a spectrogram of a song from song grid.
-     * Also displays key points.
-     *
-     * @param e btn
-     */
-    private void showSpectrogram(ActionEvent e) {
-        // get the song
-        SongBtn btn = (SongBtn) e.getSource();
-        String song = btn.getText();
-
-        // create the spectrogram
-        Scene newScene = new Scene(new Spectrogram(btn.getPoints(), song));
-        newScene.getStylesheets().add(getClass().getResource("style/style.css").toExternalForm());
-
-        Stage newStage = new Stage();
-        newStage.setScene(newScene);
-        newStage.setTitle(song);
-        newStage.getIcons().add(new Image(Main.class.getResourceAsStream("./style/icon.ico")));
-        newStage.show();
     }
 
     /**

@@ -57,7 +57,7 @@ public class MicListener extends Task<String> {
         try {
             logger.log(Level.INFO, "Trying to connect to mic!");
 
-            // get the format (11025 Hz 16 bit mono)
+            // get the format (44.1 kHz 16 bit mono)
             AudioFormat format = getAudioFormat();
             DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
 
@@ -172,11 +172,11 @@ public class MicListener extends Task<String> {
      */
     private AudioFormat getAudioFormat() {
         AudioFormat.Encoding encoding = AudioFormat.Encoding.PCM_SIGNED;
-        int sampleRate = 11025;
+        int sampleRate = 44100;
         int sampleSizeInBits = 16;
         int channels = 1;
         int frameSize = 2;
-        int frameRate = 11025;
+        int frameRate = 44100;
         return new AudioFormat(encoding, sampleRate, sampleSizeInBits, channels, frameSize,
                 frameRate, false);
     }

@@ -4,6 +4,7 @@ import main.java.model.engine.fft.FFT;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -232,6 +233,34 @@ public class AudioUtils {
         }
         catch (Exception e){
             logger.log(Level.SEVERE, "Error trying to write wav file to disk." + e.getMessage());
+        }
+    }
+
+    /**
+     * Scans for audio in {root dir}/music/*.wav
+     *
+     * @return a string array with all the audio' names;
+     */
+    public static String[] scanForSongs() {
+        File dir = new File("music");
+        File[] directoryListing = dir.listFiles();
+        ArrayList<String> songs = new ArrayList<>();
+
+        logger.log(Level.INFO, "Looking for audio in folder " + dir.getAbsolutePath());
+
+        assert directoryListing != null;
+        for(File file : directoryListing) {
+            if(file.getName().endsWith(".wav")) {
+                songs.add(file.getName());
+            }
+        }
+
+        logger.log(Level.INFO, "Done. Found " + songs.size() + " audio in "+ dir.getAbsolutePath());
+
+        if(songs.size() > 0) {
+            return songs.toArray(new String[0]);
+        } else {
+            return null;
         }
     }
 }

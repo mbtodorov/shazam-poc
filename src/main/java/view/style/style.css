@@ -16,14 +16,23 @@
 
 .root-pane {
     -fx-padding: 30 0 30 0;
-    -fx-pref-width: 480;
     -fx-spacing: 20;
 }
 
 .song-grid {
-    -fx-spacing: 10;
+
+    -fx-background-color: #373c47;
+    -fx-padding: 20;
+    -fx-background-radius: 20px;
 }
 
+.spacer {
+    -fx-padding: 0 0 20 0;
+}
+
+.spectrograms-wrap {
+    -fx-padding: 0 40 20 40;
+}
 /* ----------- BUTTONS -------------- */
 
 .button, .toggle-button {
@@ -63,7 +72,7 @@
     -fx-text-fill: primary-color;
     -fx-padding: 5 10 5 10;
     -fx-pref-height: 15px;
-    -fx-font-size: 10pt;
+    -fx-font-size: 11pt;
 }
 
 .song-btn:hover {
@@ -74,6 +83,23 @@
     -fx-font-style: italic;
 }
 
+.song-status-btn {
+    -fx-padding: 3 8 3 8;
+    -fx-font-size: 11pt;
+    -fx-font-weight: 500;
+}
+
+.song-status-btn:disabled{
+    -fx-background-color: transparent;
+    -fx-text-fill: chartreuse;
+    -fx-font-weight: 400;
+    -fx-opacity: 1;
+}
+
+.loading-btn:disabled {
+    -fx-text-fill: primary-color;
+}
+
 .go-btn {
     -fx-font-size: 20pt;
     -fx-background-radius: 130px;
@@ -81,6 +107,13 @@
     -fx-pref-width: 130px;
 }
 
+.arrow-btn {
+    -fx-background-radius: 100px;
+    -fx-pref-height: 50;
+    -fx-pref-width: 50;
+    -fx-padding: 10;
+    -fx-font-size: 20pt;
+}
 /* ------------- LABELS --------------*/
 
 .label {
@@ -90,15 +123,22 @@
 
 .info-label {
     -fx-padding: 0 30 10 30;
+    -fx-font-size: 14pt;
 }
 
 .match-label {
     -fx-padding: 10 30 0 30;
     -fx-font-weight: bold;
+    -fx-font-size: 16pt;
 }
 
 .spectrogram-label {
     -fx-padding: 20 0 20 0;
     -fx-font-weight: bold;
     -fx-font-size: 14pt;
+}
+
+.page-lbl {
+    -fx-padding: 10 0 0 0;
+    -fx-text-fill: darkgrey;
 }

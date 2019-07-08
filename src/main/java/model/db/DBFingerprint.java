@@ -56,10 +56,15 @@ public class DBFingerprint {
      * A method to insert all of the fingerprints for a song
      * in the DB
      *
+     * Note: this method is currently synchronized because I get a bug where if
+     * too many songs are being inserted at once I get some deadlocks and other exceptions -
+     * the DB doesnt like it. Possibly has something to do with the multiple connections
+     * that are being created due to the static nature of the methods
+     *
      * @param hashes the fingerprints
      * @param songName the source of the fingerprints
      */
-    public static void insertFingerprint(long[] hashes, String songName) {
+    public synchronized static void insertFingerprint(long[] hashes, String songName) {
         Connection connection = null;
         Statement st = null;
         ResultSet set = null;
@@ -86,10 +91,18 @@ public class DBFingerprint {
                 st.executeUpdate("INSERT INTO HASHES (HASH_, SONG_ID) VALUES (" + hash + "," + id +");");
             }
             st.executeUpdate("UNLOCK TABLES");
+
+            // add btree index
+            st.executeUpdate("DROP INDEX `Hash` ON HASHES;");
+            st.executeUpdate("ALTER TABLE HASHES ADD INDEX `Hash` USING BTREE (`HASH_`) VISIBLE;");
             logger.log(Level.INFO, "Done inserting hashes for song " + songName + " (id: " + id + ") in DB!");
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Exception thrown while inserting fingerprint " + e);
+        } finally {
+            try { set.close(); } catch (Exception e) { /* ignored */ }
+            try { st.close(); } catch (Exception e) { /* ignored */ }
+            try { connection.close(); } catch (Exception e) { /* ignored */ }
         }
     }
 

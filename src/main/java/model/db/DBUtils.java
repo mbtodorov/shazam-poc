@@ -69,6 +69,7 @@ public class DBUtils {
                     "SONG_ID INT(11) NOT NULL);");
             st.executeUpdate("ALTER TABLE HASHES ADD CONSTRAINT VALID FOREIGN KEY (SONG_ID) " +
                     "REFERENCES SONGS (ID_SONG) ON DELETE CASCADE ON UPDATE CASCADE; ");
+            st.executeUpdate("ALTER TABLE HASHES ADD INDEX `Hash` USING BTREE (`HASH_`) VISIBLE;");
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Exception thrown while creating schema: \n" + e.toString());
@@ -115,23 +116,61 @@ public class DBUtils {
     }
 
     /**
-     * A method to check if there are new songs in the music dir.
+     * A method that returns a String array of all songs that are in the DB
+     * and null if none.
      *
-     * @return true if there are .wav files in the music dir which are not hashed in the DB
+     * @return the songs in the DB
      */
-    public static int checkForNewSongs(String[] availableSongs) {
-        int count = 0;
+    public static String[] getSongsInDB() {
+        String[] result = null;
 
-        logger.log(Level.INFO, "Checking if there are unrecognizable (new) songs...");
+        Connection connection = null;
+        Statement st = null;
+        ResultSet rs = null;
 
-        for(String song : availableSongs) {
-            if(!isSongInDB(song)) {
-                count ++;
+        try {
+            // connect to database
+            Class.forName(DBConnection.DRIVER);
+            connection = DriverManager.getConnection(DBConnection.URL, DBConnection.USER, DBConnection.PASS);
+
+            //init statement
+            st = connection.createStatement();
+
+            // count the number of songs
+            rs = st.executeQuery("SELECT COUNT(*) FROM SONGS;");
+            int count = 0;
+            while (rs.next()) {
+                count = rs.getInt(1);
             }
+
+            // if there are no songs - return null
+            if(count == 0) {
+                return null;
+
+            } else {
+                // init an array of that size
+                result = new String[count];
+
+                // get the names of all songs
+                int index = 0;
+                rs = st.executeQuery("SELECT TITLE FROM SONGS;");
+
+                // add to array
+                while (rs.next()) {
+                    result[index] = rs.getString(1);
+                    index ++;
+                }
+            }
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Exception thrown while getting all audio from DB" + e.toString());
+        } finally {
+            try { rs.close(); } catch (Exception e) { /* ignored */ }
+            try { st.close(); } catch (Exception e) { /* ignored */ }
+            try { connection.close(); } catch (Exception e) { /* ignored */ }
         }
 
-        logger.log(Level.INFO, "Done checking for new songs. There is/are " + count + " new song(s)");
-        return count;
+        return result;
     }
 
     /**
@@ -140,7 +179,7 @@ public class DBUtils {
      * @param song the song to be checked
      * @return true if the song is in the database and false if it isn't
      */
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    @SuppressWarnings("unused")
     public static boolean isSongInDB(String song) {
         boolean result = true;
 

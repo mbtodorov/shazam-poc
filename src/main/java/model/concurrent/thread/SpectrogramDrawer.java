@@ -1,78 +1,61 @@
-package main.java.view;
-
-import main.java.model.engine.AudioFingerprint;
-import main.java.model.engine.datastructures.KeyPoint;
+package main.java.model.concurrent.thread;
 
 import javafx.embed.swing.SwingFXUtils;
-import javafx.geometry.Pos;
-import javafx.scene.control.Label;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.VBox;
+import main.java.model.engine.AudioDecoder;
+import main.java.model.engine.AudioFingerprint;
+import main.java.model.engine.datastructures.KeyPoint;
+import main.java.view.audio.Spectrogram;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-/**
- * A class used to visualize the results from an FFT algorithm
- * on a song as well as determination of key points. It is not
- * necessary but it is useful for testing purposes.
+/** A thread class used to draw spectrograms without loading the
+ * JavaFX thread. It runs the same computation on the song except it
+ * stops before hashing and uses the FFT result double[][]
  *
- * @version 1.0
  * @author Martin Todorov
+ * @version 1.0
  */
-class Spectrogram extends VBox {
-    // logger
-    private final static Logger logger;
-    // Strings used for the GUI
-    private static final String SPECTROGRAM_LBL, KEYPTS_LBL;
-    static {
-        logger = Logger.getLogger(Spectrogram.class.getName());
-        SPECTROGRAM_LBL = " Spectrogram for ";
-        KEYPTS_LBL = "Key points extracted from the spectrogram:";
+public class SpectrogramDrawer extends Thread{
+
+    // where the thread was called from
+    private Spectrogram spectrogramPane;
+    // the song
+    private String song;
+
+    /**
+     * Constructor
+     *
+     * @param spectrogramPane the GUI window
+     * @param song the song for which the spectrogram is drawn
+     */
+    public SpectrogramDrawer(Spectrogram spectrogramPane, String song) {
+        this.song = song;
+        this.spectrogramPane = spectrogramPane;
     }
 
-    // The FFT result
-    private double[][] points;
     /**
-     * Constructor for class Spectrogram
-     *
-     * @param points the points for the spectrogram
-     * @param songName the name of the song
+     * When starting the thread, get the FFT results and then use them to first
+     * draw a spectrogram and then a 2D graph of extracted key points.
      */
-    Spectrogram(double[][] points, String songName) {
-        setPrefWidth(900);
-
-        this.points = points;
-
-        // label for the spectrogram
-        Label spectrogramLabel = new Label(SPECTROGRAM_LBL + songName.substring(0, songName.length()-4) + ": ");
-        spectrogramLabel.setWrapText(true);
-        spectrogramLabel.getStyleClass().add("spectrogram-label");
+    @Override
+    public void run() {
+        // run computation
+        double[][] points = AudioDecoder.decodeWav(song, true);
 
         // the spectrogram
-        logger.log(Level.INFO, "Begin painting the spectrogram for song " + songName + "...");
-        BufferedImage spectrogram = drawSpectrogram();
-        javafx.scene.image.Image i = SwingFXUtils.toFXImage(spectrogram, null);
-        logger.log(Level.INFO, "Successfully painted spectrogram!");
-
-        // label for the keypoints
-        Label keyPointsLabel = new Label(KEYPTS_LBL);
-        keyPointsLabel.getStyleClass().add("spectrogram-label");
+        BufferedImage spectrogram = drawSpectrogram(points);
+        javafx.scene.image.Image theSpectrogram = SwingFXUtils.toFXImage(spectrogram, null);
+        // pass image to GUI
+        spectrogramPane.setSpectrogram(theSpectrogram);
 
         // the key points
-        logger.log(Level.INFO, "Begin painting the keypoints of the spectrogram...");
-        BufferedImage keyPoints = drawKeyPoints();
-        javafx.scene.image.Image j = SwingFXUtils.toFXImage(keyPoints, null);
-        logger.log(Level.INFO, "Successfully painted keypoints!");
-
-        // add all elements as children and align them in the center
-        getChildren().addAll(spectrogramLabel, new ImageView(i), keyPointsLabel, new ImageView(j),
-                new Label(""), new Label("")); // spacer labels
-        setAlignment(Pos.CENTER);
+        BufferedImage keyPoints = drawKeyPoints(points);
+        javafx.scene.image.Image theKeyPoints = SwingFXUtils.toFXImage(keyPoints, null);
+        // pass image to GUI
+        spectrogramPane.setKeyPoints(theKeyPoints);
     }
 
     /**
@@ -81,7 +64,7 @@ class Spectrogram extends VBox {
      *
      * @return an image representing the spectrogram
      */
-    private BufferedImage drawSpectrogram() {
+    private BufferedImage drawSpectrogram(double[][] points) {
         // the spectrogram image
         BufferedImage result = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
 
@@ -117,7 +100,7 @@ class Spectrogram extends VBox {
      *
      * @return the result buffered image representing the keypoints
      */
-    private BufferedImage drawKeyPoints() {
+    private BufferedImage drawKeyPoints(double[][] points) {
         // init the result image
         BufferedImage result = new BufferedImage(points.length, points[0].length, BufferedImage.TYPE_INT_RGB);
 
@@ -182,17 +165,6 @@ class Spectrogram extends VBox {
                 }
             }
         }
-
-        /* -- Uncomment to only paint a pixel, not an entire square
-        // paint a black point for each keypoint
-        for(KeyPoint kp : keyPoints) {
-            int x = kp.getTime();
-            int y = kp.getFrequency();
-            Color black = Color.BLACK;
-            result.setRGB(x, y, black.getRGB());
-        }
-         */
-
 
         // resize to fit screen better
         result = resize(result);
