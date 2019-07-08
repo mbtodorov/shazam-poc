@@ -65,7 +65,7 @@ public class DBFingerprint {
      * @param hashes the fingerprints
      * @param songName the source of the fingerprints
      */
-    public synchronized static void insertFingerprint(long[] hashes, String songName) {
+    public static void insertFingerprint(long[] hashes, String songName) {
         songName = songName.substring(0, songName.length() -4);
         Connection connection = null;
         Statement st = null;
@@ -94,9 +94,6 @@ public class DBFingerprint {
             }
             st.executeUpdate("UNLOCK TABLES");
 
-            // add btree index
-            st.executeUpdate("DROP INDEX `Hash` ON HASHES;");
-            st.executeUpdate("ALTER TABLE HASHES ADD INDEX `Hash` USING BTREE (`HASH_`) VISIBLE;");
             logger.log(Level.INFO, "Done inserting hashes for song " + songName + " (id: " + id + ") in DB!");
 
         } catch (Exception e) {
