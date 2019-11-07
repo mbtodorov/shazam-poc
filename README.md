@@ -113,17 +113,7 @@ spectrogram and get their fingerprints
 &emsp; Finally, I check for matches in the DB. A lot of things are considered there, check lookForMatches method in DBFingerprint class.
 
 # How to use
-### 1. Modules
-&emsp; Add all libraries from the lib folder as modules to the project. I used IntelliJ, so I believe that if you copy the repo
-and use the same IDE this will be automated. Here are the VM Options I use:
-```
--p
-"C:\Program Files\Java\javafx-sdk-12.0.1\lib"
---add-modules=javafx.controls,javafx.fxml
---add-exports=javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED
---add-exports=javafx.controls/com.sun.javafx.scene.control.behavior=ALL-UNNAMED
---add-exports=javafx.graphics/com.sun.javafx.scene.traversal=ALL-UNNAMED
-```
+### 1. git clone
 ### 2. Setup a MySQL local database
 &emsp; In the DBConnection class, edit the values of the private fields to connect to your local MySQL database.
 It could work with something that is not MySQL, but I'm not sure if all statements would be interpreted properly.
@@ -132,7 +122,4 @@ You don't have to worry about creating tables - the app will do that by itself.
 ### 3. Get .wav files
 &emsp; Populate the {root}/music dir with .wav files.
 
-### 4. Run the app!
-&emsp; Run the application from the Main.java class. It will create the tables needed in the DB and recognize that
-there are songs in the music dir which have not been fingerprinted. Click the 'Compute' button, wait while the app fingerprints all songs, 
-then choose an input method and test it!
+### 4. gradle run
