@@ -1,0 +1,145 @@
+/* ----------- COLORS ----------- */
+
+*{
+    primary-color: #01a7ff;
+    primary-color-dark: #009aed;
+    primary-text-color: #f4f4f4;
+    primary-background-color: #2A2E37;
+}
+
+/* ----------- PANES -------------*/
+
+.root {
+    -fx-font-size: 14pt;
+    -fx-background: primary-background-color;
+}
+
+.root-pane {
+    -fx-padding: 30 0 30 0;
+    -fx-spacing: 20;
+}
+
+.song-grid {
+
+    -fx-background-color: #373c47;
+    -fx-padding: 20;
+    -fx-background-radius: 20px;
+}
+
+.spacer {
+    -fx-padding: 0 0 20 0;
+}
+
+.spectrograms-wrap {
+    -fx-padding: 0 40 20 40;
+}
+/* ----------- BUTTONS -------------- */
+
+.button, .toggle-button {
+    -fx-background-color: primary-color;
+    -fx-text-fill: primary-text-color;
+    -fx-font-size: 14pt;
+    -fx-font-weight: bold;
+    -fx-background-radius: 5px;
+
+}
+
+.jfx-button {
+    -jfx-disable-visual-focus: true;
+}
+
+/*noinspection SpellCheckingInspection*/
+.button:hover {
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(24, 24, 24, 0.5), 12, 0, 0, 4);
+}
+
+.btn {
+    -fx-pref-height: 20px;
+    -fx-padding: 10 23 10 23 ;
+}
+
+.toggle-btn {
+    -fx-background-color: transparent;
+    -fx-font-weight: 400;
+    -fx-font-size: 12pt;
+    -fx-padding: 0;
+    -jfx-toggle-color: primary-color;
+    -jfx-disable-visual-focus: true;
+}
+
+.song-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: primary-color;
+    -fx-padding: 5 10 5 10;
+    -fx-pref-height: 15px;
+    -fx-font-size: 11pt;
+}
+
+.song-btn:hover {
+    -fx-background-color: rgba(1,167,255, 0.2);
+}
+
+.song-btn:disabled {
+    -fx-font-style: italic;
+}
+
+.song-status-btn {
+    -fx-padding: 3 8 3 8;
+    -fx-font-size: 11pt;
+    -fx-font-weight: 500;
+}
+
+.song-status-btn:disabled{
+    -fx-background-color: transparent;
+    -fx-text-fill: chartreuse;
+    -fx-font-weight: 400;
+    -fx-opacity: 1;
+}
+
+.loading-btn:disabled {
+    -fx-text-fill: primary-color;
+}
+
+.go-btn {
+    -fx-font-size: 20pt;
+    -fx-background-radius: 130px;
+    -fx-pref-height: 130px;
+    -fx-pref-width: 130px;
+}
+
+.arrow-btn {
+    -fx-background-radius: 100px;
+    -fx-pref-height: 50;
+    -fx-pref-width: 50;
+    -fx-padding: 10;
+    -fx-font-size: 20pt;
+}
+/* ------------- LABELS --------------*/
+
+.label {
+    -fx-text-fill: primary-text-color;
+    -fx-font-size: 12pt;
+}
+
+.info-label {
+    -fx-padding: 0 30 10 30;
+    -fx-font-size: 14pt;
+}
+
+.match-label {
+    -fx-padding: 10 30 0 30;
+    -fx-font-weight: bold;
+    -fx-font-size: 16pt;
+}
+
+.spectrogram-label {
+    -fx-padding: 20 0 20 0;
+    -fx-font-weight: bold;
+    -fx-font-size: 14pt;
+}
+
+.page-lbl {
+    -fx-padding: 10 0 0 0;
+    -fx-text-fill: darkgrey;
+}
