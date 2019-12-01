@@ -38,6 +38,7 @@ import java.util.logging.Logger;
  * The GUI contains detailed instructions on the usage of the
  * application.
  *
+ * Testing gradle.yaml with this commit
  * @version 1.0
  * @author Martin Todorov
  */
